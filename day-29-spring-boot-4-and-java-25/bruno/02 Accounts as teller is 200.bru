@@ -1,0 +1,21 @@
+meta {
+  name: Accounts as teller is 200
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: teller
+  password: teller-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}

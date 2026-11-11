@@ -1,0 +1,21 @@
+meta {
+  name: Grace's dollar balance is unchanged
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/accounts/2
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: grace
+  password: grace-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body.balance: eq 980.5
+}

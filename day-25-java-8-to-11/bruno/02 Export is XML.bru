@@ -1,0 +1,17 @@
+meta {
+  name: Export is XML
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/export
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.headers.content-type: contains application/xml
+  res.body: contains <owner>Grace Hopper</owner>
+}

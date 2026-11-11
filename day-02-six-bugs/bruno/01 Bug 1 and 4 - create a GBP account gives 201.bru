@@ -1,0 +1,32 @@
+meta {
+  name: Bug 1 and 4 - create a GBP account gives 201
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "Linus",
+    "currency": "GBP",
+    "openingBalance": 0.1
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.headers.location: isDefined
+}
+
+script:post-response {
+  bru.setVar("accountId", res.body.id);
+}
+
+docs {
+  Bug 2 (money) isn't checked here: look at the balance in the response yourself. Is it exactly 0.1?
+}

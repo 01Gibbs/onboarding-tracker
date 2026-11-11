@@ -1,0 +1,16 @@
+meta {
+  name: Bug 5 - missing account gives 404
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/accounts/999
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

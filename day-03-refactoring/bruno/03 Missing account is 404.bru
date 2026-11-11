@@ -1,0 +1,15 @@
+meta {
+  name: Missing account is 404
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/accounts/42
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+}

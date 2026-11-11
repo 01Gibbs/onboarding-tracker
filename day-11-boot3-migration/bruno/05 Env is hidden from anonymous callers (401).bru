@@ -1,0 +1,15 @@
+meta {
+  name: Env is hidden from anonymous callers (401)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/actuator/env
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}

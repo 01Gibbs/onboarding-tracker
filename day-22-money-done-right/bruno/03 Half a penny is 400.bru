@@ -1,0 +1,33 @@
+meta {
+  name: Half a penny is 400
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+headers {
+  Idempotency-Key: ada-half-penny-{{toAccountId}}
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 10.005
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Invalid request"
+  res.body.errors.amount: isDefined
+}

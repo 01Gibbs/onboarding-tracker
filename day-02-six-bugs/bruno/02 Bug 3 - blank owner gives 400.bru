@@ -1,0 +1,24 @@
+meta {
+  name: Bug 3 - blank owner gives 400
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "",
+    "currency": "EUR",
+    "openingBalance": 5
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Invalid request"
+}

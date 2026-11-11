@@ -1,0 +1,28 @@
+meta {
+  name: Too much is 400
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 1000000
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Insufficient funds"
+}

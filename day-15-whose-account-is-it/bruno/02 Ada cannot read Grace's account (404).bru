@@ -1,0 +1,21 @@
+meta {
+  name: Ada cannot read Grace's account (404)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/2
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Fills in ${...} placeholders from accounts.properties (deprecated since Spring 5.2, still common) -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:accounts.properties"/>
+    </bean>
+
+    <bean id="accountService" class="com.example.accounts.service.AccountService">
+        <constructor-arg value="${accounts.currency}"/>
+    </bean>
+</beans>

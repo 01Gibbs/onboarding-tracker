@@ -1,0 +1,18 @@
+meta {
+  name: Missing account is a problem detail
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/accounts/99
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.headers.content-type: contains problem+json
+  res.body.title: eq "Account not found"
+  res.body.detail: eq "Account 99 not found"
+}

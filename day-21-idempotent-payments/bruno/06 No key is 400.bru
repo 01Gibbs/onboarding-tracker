@@ -1,0 +1,28 @@
+meta {
+  name: No key is 400
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 50.00
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Idempotency key required"
+}

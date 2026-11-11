@@ -1,0 +1,21 @@
+.gradle/
+build/
+data/
+.idea/
+*.iml
+out/
+.vscode/
+.DS_Store
+
+# JVM heap dumps (from OutOfMemoryError or /actuator/heapdump)
+*.hprof
+target/
+__pycache__/
+node_modules/
+
+# Not course material: assistant settings and the working records behind how the course was built
+.claude/
+tools/course/pending/
+docs/learning-records/
+docs/review/
+docs/research/

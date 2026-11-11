@@ -1,0 +1,7 @@
+# Only build/libs/*.jar is copied into the image; keep everything else out of the build context.
+.gradle/
+.idea/
+data/
+src/
+build/
+!build/libs/accounts-0.0.1-SNAPSHOT.jar

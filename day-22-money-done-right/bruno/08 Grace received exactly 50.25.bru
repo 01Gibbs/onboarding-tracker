@@ -1,0 +1,21 @@
+meta {
+  name: Grace received exactly 50.25
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/accounts/{{toAccountId}}
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: grace
+  password: grace-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body.balance: eq 50.25
+}

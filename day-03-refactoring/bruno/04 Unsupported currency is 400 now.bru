@@ -1,0 +1,25 @@
+meta {
+  name: Unsupported currency is 400 now
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "Ada",
+    "currency": "XYZ",
+    "openingBalance": 5
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Unsupported currency"
+  res.body.detail: eq "Unsupported currency: XYZ"
+}

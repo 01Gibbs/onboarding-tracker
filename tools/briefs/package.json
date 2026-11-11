@@ -1,0 +1,17 @@
+{
+  "name": "briefs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "cd ../course && python3 -m unittest discover -s tests -t . && python3 verify.py --structure-only",
+    "build": "node build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "docx": "^9.5.1"
+  }
+}

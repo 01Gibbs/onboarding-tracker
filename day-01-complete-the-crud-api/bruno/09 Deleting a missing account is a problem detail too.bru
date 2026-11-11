@@ -1,0 +1,16 @@
+meta {
+  name: Deleting a missing account is a problem detail too
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/accounts/99
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

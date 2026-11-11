@@ -1,0 +1,20 @@
+meta {
+  name: Someone else's account (look for ACCESS_DENIED in the app log)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/2
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 404
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Same key with a different amount is 422
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+headers {
+  Idempotency-Key: ada-pays-grace-{{toAccountId}}
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 75.00
+  }
+}
+
+assert {
+  res.status: eq 422
+  res.body.title: eq "Idempotency key reused"
+}

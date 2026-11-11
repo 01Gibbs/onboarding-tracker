@@ -1,0 +1,1215 @@
+{
+  "$comment": "Every fact about every day, stated once. Generators read it; tools/course/verify.py proves it.",
+  "days": [
+    {
+      "day": 0,
+      "folder": "day-00-onboarding-tracker",
+      "title": "Build an Onboarding Tracker REST API",
+      "codebase": "modern",
+      "tagline": "The team's existing workshop",
+      "summary": "POST/GET, validation, H2, tested with Bruno",
+      "plain": "We build a small web service from scratch that keeps a list of new joiners. You send it details, it stores them and gives them back. It's the shape of almost every service the team looks after.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": null,
+      "startsFrom": "—",
+      "starter": null,
+      "solution": {
+        "tests": 8
+      },
+      "bruno": {
+        "requests": 7,
+        "failingOnStarter": []
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "Controller, Repository and H2"
+      }
+    },
+    {
+      "day": 1,
+      "folder": "day-01-complete-the-crud-api",
+      "title": "Complete the Accounts CRUD API",
+      "codebase": "modern",
+      "tagline": "Follows on from the Onboarding Tracker workshop",
+      "summary": "`PUT`, `DELETE`, 404s, problem-detail errors",
+      "plain": "We finish a service that keeps bank-style accounts: changing and deleting them, and giving clear, consistent error messages when something is asked for that doesn't exist or doesn't make sense.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": null,
+      "startsFrom": "Day 0's level",
+      "starter": {
+        "tests": 1,
+        "failing": []
+      },
+      "solution": {
+        "tests": 1
+      },
+      "bruno": {
+        "requests": 10,
+        "failingOnStarter": [
+          "02 Update the owner",
+          "03 Blank owner on update is 400",
+          "04 Delete it",
+          "05 Delete it again is 404",
+          "06 Read it after delete is 404",
+          "07 Missing account is a problem detail",
+          "08 Invalid create names every bad field",
+          "09 Deleting a missing account is a problem detail too",
+          "10 Update a missing account is 404"
+        ]
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "`ApiExceptionHandler`",
+        "change": "New: `@RestControllerAdvice` turns `AccountNotFoundException` and validation errors into problem details; `PUT` and `DELETE` arrive, with 404s",
+        "why": "One error format for every endpoint"
+      }
+    },
+    {
+      "day": 2,
+      "folder": "day-02-six-bugs",
+      "title": "Code Review: Six Bugs",
+      "codebase": "modern",
+      "tagline": "A colleague's rushed pull request",
+      "summary": "a rushed pull request, symptom by symptom",
+      "plain": "Someone rushed a change and it broke six things. We follow each symptom back to its cause, the way a developer investigates a bug report from users.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 1,
+      "starter": {
+        "tests": 1,
+        "failing": []
+      },
+      "solution": {
+        "tests": 1
+      },
+      "bruno": {
+        "requests": 5,
+        "failingOnStarter": [
+          "01 Bug 1 and 4 - create a GBP account gives 201",
+          "02 Bug 3 - blank owner gives 400",
+          "03 Bug 5 - missing account gives 404",
+          "04 Bug 6 - GET must not delete",
+          "05 Bug 6 - DELETE deletes"
+        ]
+      },
+      "handoff": [
+        "src/main/java/com/example/accounts/controller/AccountController.java",
+        "src/main/java/com/example/accounts/dto/CreateAccountRequest.java",
+        "src/main/java/com/example/accounts/service/AccountService.java"
+      ],
+      "diagram": {
+        "box": "Controller and Service"
+      }
+    },
+    {
+      "day": 3,
+      "folder": "day-03-refactoring",
+      "title": "Refactor Without Changing Behaviour",
+      "codebase": "modern",
+      "tagline": "Cleaning up yesterday's pull request",
+      "summary": "constructor injection, layers, a response DTO",
+      "plain": "We tidy the code's structure without changing what it does, and prove nothing changed. Tidy code is cheaper and safer to change later.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 2,
+      "starter": {
+        "tests": 1,
+        "failing": []
+      },
+      "solution": {
+        "tests": 1
+      },
+      "bruno": {
+        "requests": 4,
+        "failingOnStarter": [
+          "04 Unsupported currency is 400 now"
+        ]
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "Controller and Service"
+      }
+    },
+    {
+      "day": 4,
+      "folder": "day-04-unit-tests",
+      "title": "Unit Tests with JUnit 5, AssertJ and Mockito",
+      "codebase": "modern",
+      "tagline": "Fast tests for logic and services",
+      "summary": "JUnit 5, AssertJ, Mockito",
+      "plain": "We write automatic checks (tests) that prove small pieces of the service work. They run in seconds and catch mistakes before anyone else sees them.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 3,
+      "starter": {
+        "tests": 2,
+        "failing": []
+      },
+      "solution": {
+        "tests": 9
+      },
+      "bruno": null,
+      "handoff": [
+        "src/test/java/com/example/accounts/service/AccountServiceTest.java",
+        "src/test/java/com/example/accounts/service/SupportedCurrenciesTest.java"
+      ],
+      "diagram": {
+        "box": "Service (tested alone)"
+      }
+    },
+    {
+      "day": 5,
+      "folder": "day-05-slice-tests",
+      "title": "Testing the Web Layer and the Repository",
+      "codebase": "modern",
+      "tagline": "Spring Boot test slices",
+      "summary": "`@WebMvcTest`, `@DataJpaTest`",
+      "plain": "We test bigger pieces: the part that answers web requests and the part that talks to the database. Each test checks one layer on its own.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 4,
+      "starter": {
+        "tests": 9,
+        "failing": []
+      },
+      "solution": {
+        "tests": 15
+      },
+      "bruno": null,
+      "handoff": [
+        "src/test/java/com/example/accounts/controller/AccountControllerTest.java",
+        "src/test/java/com/example/accounts/repository/AccountRepositoryTest.java"
+      ],
+      "diagram": {
+        "box": "Controller (web slice) and Repository (JPA slice)"
+      }
+    },
+    {
+      "day": 6,
+      "folder": "day-06-a-legacy-service",
+      "title": "Get a 2022 Service Running, and Audit It",
+      "codebase": "legacy",
+      "tagline": "Java 11 / Spring Boot 2.7",
+      "summary": "get Java 11 / Boot 2.7 running, and audit it",
+      "plain": "We pick up an older service written in 2022 and get it running on a modern laptop. Then we write down what's old about it: the starting point for every upgrade.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": null,
+      "startsFrom": "A new (2022) codebase",
+      "starter": {
+        "tests": 6,
+        "failing": []
+      },
+      "solution": {
+        "tests": 6
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": []
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "the whole (older) app"
+      }
+    },
+    {
+      "day": 7,
+      "folder": "day-07-junit4",
+      "title": "Read, Write and Migrate JUnit 4 Tests",
+      "codebase": "legacy",
+      "tagline": "The legacy service's test suite",
+      "summary": "read, write and migrate its tests",
+      "plain": "Older services often have older tests. We learn to read them, add one, and move them to the current testing tool so they keep running after upgrades.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 6,
+      "starter": {
+        "tests": 6,
+        "failing": []
+      },
+      "solution": {
+        "tests": 9
+      },
+      "bruno": null,
+      "handoff": [
+        "src/test/java/com/example/accounts/service/AccountServiceTest.java"
+      ],
+      "diagram": {
+        "box": "the tests"
+      }
+    },
+    {
+      "day": 8,
+      "folder": "day-08-what-do-we-ship",
+      "title": "What Do We Ship? Lockfile, Scan, Trace",
+      "codebase": "legacy",
+      "tagline": "Finding vulnerable dependencies (OWASP A03)",
+      "summary": "lockfile, OSV scan, trace the CVEs (OWASP A03)",
+      "plain": "Every service is built from other people's code (libraries). We list exactly which ones we ship and check them against public lists of known security problems.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 7,
+      "starter": {
+        "tests": 9,
+        "failing": []
+      },
+      "solution": {
+        "tests": 9
+      },
+      "bruno": null,
+      "handoff": [],
+      "diagram": {
+        "box": "the libraries under every box"
+      }
+    },
+    {
+      "day": 9,
+      "folder": "day-09-patch-and-triage",
+      "title": "Patch What You Can, Decide the Rest",
+      "codebase": "legacy",
+      "tagline": "Fixing vulnerable dependencies on Boot 2.7",
+      "summary": "version overrides and recorded decisions",
+      "plain": "We fix the security problems we can by moving to safer library versions, and write down a reasoned decision for the ones we can't fix yet.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 8,
+      "starter": {
+        "tests": 9,
+        "failing": []
+      },
+      "solution": {
+        "tests": 9
+      },
+      "bruno": null,
+      "handoff": [],
+      "diagram": {
+        "box": "the libraries under every box"
+      }
+    },
+    {
+      "day": 10,
+      "folder": "day-10-security-misconfigurations",
+      "title": "Fix the Security Misconfigurations",
+      "codebase": "legacy",
+      "tagline": "Actuator, H2 console, secrets (OWASP A02)",
+      "summary": "actuator, H2 console, secrets (OWASP A02)",
+      "plain": "We close doors that were left open by mistake: admin pages anyone could reach, and a password written straight into the code.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 9,
+      "starter": {
+        "tests": 13,
+        "failing": [
+          "H2ConsoleTest.h2ConsoleIsOffOutsideTheDevProfile",
+          "SecurityHardeningTest.anonymousCallersCannotReachOtherActuatorEndpoints",
+          "SecurityHardeningTest.sensitiveEndpointsAreNotExposedAtAll"
+        ]
+      },
+      "solution": {
+        "tests": 13
+      },
+      "bruno": {
+        "requests": 7,
+        "failingOnStarter": [
+          "02 Actuator menu needs a login (401 once fixed)",
+          "03 Env is hidden from anonymous callers (401 once fixed)",
+          "04 Env does not exist even with a login (404 once fixed)",
+          "07 H2 console is off (404 once fixed)"
+        ]
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/H2ConsoleTest.java",
+        "src/test/java/com/example/accounts/SecurityHardeningTest.java"
+      ],
+      "diagram": {
+        "box": "configuration around the app"
+      }
+    },
+    {
+      "day": 11,
+      "folder": "day-11-boot3-migration",
+      "title": "Upgrade to Spring Boot 3.5 and Java 17",
+      "codebase": "legacy",
+      "tagline": "OpenRewrite, and what it misses",
+      "summary": "OpenRewrite, and what it misses",
+      "plain": "We move the older service onto a supported version of its framework and Java, using a tool that does most of the edits, then fix what the tool misses.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 11 → 17",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18 → 3.5.16",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 10,
+      "starter": {
+        "tests": 13,
+        "failing": []
+      },
+      "solution": {
+        "tests": 13
+      },
+      "bruno": {
+        "requests": 7,
+        "failingOnStarter": []
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "the whole app's platform"
+      }
+    },
+    {
+      "day": 12,
+      "folder": "day-12-rescan-after-migration",
+      "title": "Re-scan After the Upgrade",
+      "codebase": "legacy",
+      "tagline": "Upgraded isn't the same as done",
+      "summary": "upgraded isn't done",
+      "plain": "We scan again after the upgrade. Upgrading removes some problems and can add new ones, so 'upgraded' isn't the same as 'done'.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 17",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 3.5.16",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 11,
+      "starter": {
+        "tests": 13,
+        "failing": []
+      },
+      "solution": {
+        "tests": 13
+      },
+      "bruno": null,
+      "handoff": [],
+      "diagram": {
+        "box": "the libraries under every box"
+      }
+    },
+    {
+      "day": 13,
+      "folder": "day-13-jdk-21",
+      "title": "Upgrade the JDK from 17 to 21",
+      "codebase": "legacy",
+      "tagline": "Inspect first, then change one line",
+      "summary": "inspect first, then upgrade",
+      "plain": "We move the older service to a newer Java version. We check what it uses first, then change it, then prove it still works.",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 17 → 21",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 3.5.16",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 12,
+      "starter": {
+        "tests": 13,
+        "failing": []
+      },
+      "solution": {
+        "tests": 13
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": []
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "the JDK under the whole app"
+      }
+    },
+    {
+      "day": 14,
+      "folder": "day-14-login-and-roles",
+      "title": "Login and Roles for the Modern API",
+      "codebase": "modern",
+      "tagline": "Spring Security on Boot 4 (OWASP A01)",
+      "summary": "Spring Security, deny by default, roles (OWASP A01)",
+      "plain": "We add logins to the modern service, so only known people get in, and each person can only do what their role allows.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 5,
+      "starter": {
+        "tests": 15,
+        "failing": []
+      },
+      "solution": {
+        "tests": 19
+      },
+      "bruno": {
+        "requests": 8,
+        "failingOnStarter": [
+          "02 No login is 401",
+          "03 Wrong password is 401",
+          "06 Customer cannot list every account (403)",
+          "07 Customer cannot delete (403)"
+        ]
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/controller/AccountControllerTest.java"
+      ],
+      "diagram": {
+        "box": "Security filter chain",
+        "change": "`SecurityConfig` with HTTP Basic, roles `CUSTOMER` / `TELLER`, deny by default",
+        "why": "OWASP A01 Broken Access Control: roles"
+      }
+    },
+    {
+      "day": 15,
+      "folder": "day-15-whose-account-is-it",
+      "title": "Whose Account Is It? Fixing an IDOR",
+      "codebase": "modern",
+      "tagline": "Object-level access control (OWASP A01)",
+      "summary": "an IDOR and ownership checks (OWASP A01)",
+      "plain": "We fix a common security hole where a logged-in customer could see someone else's account just by changing a number in the address.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 14,
+      "starter": {
+        "tests": 19,
+        "failing": []
+      },
+      "solution": {
+        "tests": 22
+      },
+      "bruno": {
+        "requests": 5,
+        "failingOnStarter": [
+          "02 Ada cannot read Grace's account (404)",
+          "05 Creating an account needs a username (400)"
+        ]
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/service/AccountServiceTest.java"
+      ],
+      "diagram": {
+        "box": "`AccountService`",
+        "change": "An `Account.username` owner column and an ownership check in `AccountService.getVisibleTo` (someone else's account is a 404)",
+        "why": "OWASP A01: [IDOR](glossary.md#idor)"
+      }
+    },
+    {
+      "day": 16,
+      "folder": "day-16-injection",
+      "title": "Find and Fix an Injection",
+      "codebase": "modern",
+      "tagline": "OWASP A05",
+      "summary": "string-built JPQL and bound parameters (OWASP A05)",
+      "plain": "We find and fix code that let a user's input be run as part of a database command, one of the oldest and most damaging security mistakes.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 15,
+      "starter": {
+        "tests": 24,
+        "failing": [
+          "AccountSearchTest.aQuoteInTheCurrencyCannotWidenTheSearch"
+        ]
+      },
+      "solution": {
+        "tests": 24
+      },
+      "bruno": {
+        "requests": 2,
+        "failingOnStarter": [
+          "02 A quote in the currency finds nothing"
+        ]
+      },
+      "handoff": [
+        "src/main/java/com/example/accounts/controller/AccountController.java",
+        "src/main/java/com/example/accounts/service/AccountService.java",
+        "src/test/java/com/example/accounts/service/AccountSearchTest.java"
+      ],
+      "diagram": {
+        "box": "`AccountRepository`",
+        "change": "String-built JPQL in the service is replaced by a query method, `findByUsernameAndCurrency`",
+        "why": "OWASP A05 [Injection](glossary.md#injection): bound parameters"
+      }
+    },
+    {
+      "day": 17,
+      "folder": "day-17-storing-passwords",
+      "title": "Store Passwords Properly",
+      "codebase": "modern",
+      "tagline": "OWASP A04 and A07",
+      "summary": "salted, slow hashes (OWASP A04, A07)",
+      "plain": "We stop storing passwords in a readable form, and store them the way the security standards require, so a leaked database doesn't leak passwords.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 16,
+      "starter": {
+        "tests": 24,
+        "failing": []
+      },
+      "solution": {
+        "tests": 28
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": []
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/config/PasswordStorageTest.java"
+      ],
+      "diagram": {
+        "box": "Security filter chain",
+        "change": "A `PasswordEncoder` bean: `{noop}` plain-text passwords become salted `{pbkdf2}` hashes",
+        "why": "OWASP A04 / A07: [hashing](glossary.md#hashing-vs-encryption)"
+      }
+    },
+    {
+      "day": 18,
+      "folder": "day-18-audit-logs",
+      "title": "Log Security Events",
+      "codebase": "modern",
+      "tagline": "OWASP A09",
+      "summary": "failed logins and refused lookups (OWASP A09)",
+      "plain": "We make the service write down security-relevant events, such as failed logins and refused requests, so attacks can be spotted and investigated.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 17,
+      "starter": {
+        "tests": 28,
+        "failing": []
+      },
+      "solution": {
+        "tests": 32
+      },
+      "bruno": {
+        "requests": 2,
+        "failingOnStarter": []
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/config/SecurityAuditTest.java",
+        "src/test/java/com/example/accounts/service/AccountServiceTest.java"
+      ],
+      "diagram": {
+        "box": "`security.audit` log",
+        "change": "`SecurityAuditListener` logs `LOGIN_FAILED`; `AccountService` logs `ACCESS_DENIED`; `AuditLog.clean` strips line breaks",
+        "why": "OWASP A09: attacks you can see"
+      }
+    },
+    {
+      "day": 19,
+      "folder": "day-19-all-or-nothing-transfers",
+      "title": "All or Nothing: Safe Transfers",
+      "codebase": "modern",
+      "tagline": "Failing closed (OWASP A10)",
+      "summary": "`@Transactional`, failing closed (OWASP A10)",
+      "plain": "A transfer moves money out of one account and into another. We make sure it happens completely or not at all: never half.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 18,
+      "starter": {
+        "tests": 34,
+        "failing": [
+          "TransferTest.aFailedTransferChangesNothing"
+        ]
+      },
+      "solution": {
+        "tests": 35
+      },
+      "bruno": {
+        "requests": 8,
+        "failingOnStarter": [
+          "02 Ada's balance is unchanged",
+          "05 Ada's balance went down by 50",
+          "08 Ada's balance is still 1200 after the failed transfers"
+        ]
+      },
+      "handoff": [
+        "src/main/java/com/example/accounts/config/SecurityConfig.java",
+        "src/main/java/com/example/accounts/controller/AccountController.java",
+        "src/main/java/com/example/accounts/dto/TransferRequest.java",
+        "src/main/java/com/example/accounts/exception/ApiExceptionHandler.java",
+        "src/main/java/com/example/accounts/exception/InsufficientFundsException.java",
+        "src/main/java/com/example/accounts/model/Account.java",
+        "src/main/java/com/example/accounts/service/AccountService.java",
+        "src/test/java/com/example/accounts/service/TransferTest.java"
+      ],
+      "diagram": {
+        "box": "`AccountService`",
+        "change": "`POST /accounts/{id}/transfers`; `@Transactional` on `transfer`, with every check before any change",
+        "why": "OWASP A10: [all or nothing](glossary.md#transaction), [fail closed](glossary.md#fail-closed)"
+      }
+    },
+    {
+      "day": 20,
+      "folder": "day-20-two-transfers-at-once",
+      "title": "Two Transfers at Once",
+      "codebase": "modern",
+      "tagline": "The lost update, and optimistic locking",
+      "summary": "lost updates and optimistic locking",
+      "plain": "When two transfers touch the same account at the same moment, one can silently overwrite the other. We make the service notice and refuse.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 19,
+      "starter": {
+        "tests": 36,
+        "failing": [
+          "ConcurrentTransferTest.aWithdrawalBasedOnAStaleBalanceIsRejectedNotLost"
+        ]
+      },
+      "solution": {
+        "tests": 37
+      },
+      "bruno": {
+        "requests": 5,
+        "failingOnStarter": []
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/controller/AccountControllerTest.java",
+        "src/test/java/com/example/accounts/service/ConcurrentTransferTest.java"
+      ],
+      "diagram": {
+        "box": "`Account` entity, `ApiExceptionHandler`",
+        "change": "A [`@Version`](glossary.md#version) field: a stale write fails at commit instead of overwriting; `OptimisticLockingFailureException` → 409 `Concurrent update`",
+        "why": "[Optimistic locking](glossary.md#optimistic-locking): no lost updates"
+      }
+    },
+    {
+      "day": 21,
+      "folder": "day-21-idempotent-payments",
+      "title": "Idempotent Payments",
+      "codebase": "modern",
+      "tagline": "A retry must never pay twice",
+      "summary": "a retry must never pay twice",
+      "plain": "If a payment request is sent twice (say, the network dropped and the app retried), the customer must only be charged once. We make that guaranteed.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 20,
+      "starter": {
+        "tests": 40,
+        "failing": [
+          "IdempotencyTest.aTransferWithoutAKeyIs400",
+          "IdempotencyTest.theSameKeyTwiceMovesTheMoneyOnce",
+          "IdempotencyTest.theSameKeyWithADifferentBodyIs422"
+        ]
+      },
+      "solution": {
+        "tests": 41
+      },
+      "bruno": {
+        "requests": 15,
+        "failingOnStarter": [
+          "04 Ada's balance went down by 50 once",
+          "05 Same key with a different amount is 422",
+          "06 No key is 400",
+          "09 Ada's balance is still 1200",
+          "11 Ada's balance went down again (an independent payment)",
+          "14 A blank key is 400",
+          "15 A key over 64 characters is 400"
+        ]
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/controller/IdempotencyTest.java"
+      ],
+      "diagram": {
+        "box": "Controller, `AccountService`, new `IdempotencyRecord` table",
+        "change": "An [`Idempotency-Key`](glossary.md#idempotency-key) header, stored in the same transaction as the transfer: a retry replays the answer, a reused key with a different body is 422",
+        "why": "Safe retries: never pay twice"
+      }
+    },
+    {
+      "day": 22,
+      "folder": "day-22-money-done-right",
+      "title": "Money Done Right",
+      "codebase": "modern",
+      "tagline": "Currencies and decimal places",
+      "summary": "currencies and decimal places",
+      "plain": "Money has rules: different currencies, and a fixed number of decimal places. We stop the service rounding pennies away or mixing currencies.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 21,
+      "starter": {
+        "tests": 43,
+        "failing": [
+          "MoneyRulesTest.aTransferBetweenCurrenciesIs400AndChangesNothing",
+          "MoneyRulesTest.anAmountWithMoreThanTwoDecimalPlacesIs400"
+        ]
+      },
+      "solution": {
+        "tests": 48
+      },
+      "bruno": {
+        "requests": 8,
+        "failingOnStarter": [
+          "02 Pounds to Grace's dollar account is 400",
+          "03 Half a penny is 400",
+          "04 Ada's balance is unchanged",
+          "05 Grace's dollar balance is unchanged",
+          "07 Ada's balance went down by 50.25",
+          "08 Grace received exactly 50.25"
+        ]
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/controller/MoneyRulesTest.java",
+        "src/test/java/com/example/accounts/model/MoneyTest.java"
+      ],
+      "diagram": {
+        "box": "Model (`Money`), DTOs",
+        "change": "A `Money` record (amount + [currency](glossary.md#iso-4217)) that refuses mixed currencies and never rounds silently ([rounding mode](glossary.md#rounding-mode) `UNNECESSARY`); `@Digits` allows 2 decimal places",
+        "why": "Correct amounts"
+      }
+    },
+    {
+      "day": 23,
+      "folder": "day-23-mask-what-you-show",
+      "title": "Mask What You Show",
+      "codebase": "modern",
+      "tagline": "Account numbers in responses and logs",
+      "summary": "account numbers in responses and logs",
+      "plain": "We hide most of each account number in what the service shows and records, so a screenshot or a log file can't leak a customer's full details.",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 22,
+      "starter": {
+        "tests": 50,
+        "failing": [
+          "AccountControllerTest.theAccountNumberIsMaskedInJson",
+          "TransferTest.theTransferLogNeverShowsAFullAccountNumber"
+        ]
+      },
+      "solution": {
+        "tests": 53
+      },
+      "bruno": {
+        "requests": 6,
+        "failingOnStarter": [
+          "01 Ada sees her account number masked",
+          "02 Grace sees her account number masked",
+          "03 The teller's list is masked too",
+          "04 Teller opens a GBP account for Grace",
+          "06 Ada's balance went down by 50"
+        ]
+      },
+      "handoff": [
+        "src/main/java/com/example/accounts/config/DataSeeder.java",
+        "src/main/java/com/example/accounts/dto/AccountResponse.java",
+        "src/main/java/com/example/accounts/model/Account.java",
+        "src/main/java/com/example/accounts/service/AccountService.java",
+        "src/test/java/com/example/accounts/config/MaskTest.java",
+        "src/test/java/com/example/accounts/controller/AccountControllerTest.java",
+        "src/test/java/com/example/accounts/service/TransferTest.java"
+      ],
+      "diagram": {
+        "box": "`AccountResponse`, the transfer log line",
+        "change": "One `Mask.accountNumber` helper: `****5678` in every response and log line; the stored number is unchanged",
+        "why": "Less [PII](glossary.md#pii) on show ([masking](glossary.md#masking))"
+      }
+    },
+    {
+      "day": 24,
+      "folder": "day-24-maven",
+      "title": "Maven for Gradle Users",
+      "codebase": "modern",
+      "tagline": "Take a dependency finding through Maven",
+      "summary": "`./mvnw dependency:tree`, a `<properties>` version override",
+      "plain": "Many services are built with a tool called Maven rather than the Gradle we've used so far. Today we take the API we know from Day 5, now built with Maven, and do one common job with it: a ticket says one library must move to a newer patch version, so we make the change, prove it took effect, and keep everything working.",
+      "build": "maven",
+      "gradle": null,
+      "maven": "3.9.16",
+      "glance": {
+        "java": "Java 25",
+        "build": "Maven 3.9 (use the wrapper `./mvnw`)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "None today (a build day; Day 5's collection still works)"
+      },
+      "buildsOn": null,
+      "startsFrom": "Day 5's API, built with Maven",
+      "starter": {
+        "tests": 16,
+        "failing": [
+          "JacksonVersionTest.jacksonDatabindIsAtLeast3_1_8"
+        ]
+      },
+      "solution": {
+        "tests": 16
+      },
+      "bruno": null,
+      "handoff": [],
+      "diagram": {
+        "box": "the build (`pom.xml`): Maven instead of Gradle"
+      }
+    },
+    {
+      "day": 25,
+      "folder": "day-25-java-8-to-11",
+      "title": "From Java 8 to 11",
+      "codebase": "estate",
+      "tagline": "JAXB left the JDK (JEP 320)",
+      "summary": "move a Java 8 service to 11, and add JAXB back as a library",
+      "plain": "Some of the team's services still run on Java 8, a version from 2014 that's long past its prime. Today we move one of them to Java 11. The move breaks the service, because Java 11 removed a built-in piece it relied on for producing XML files, so we add that piece back as a separate library and prove everything works again.",
+      "build": "gradle",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 8 → 11",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Boot 2.7.18",
+        "database": "None (accounts held in memory)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": null,
+      "startsFrom": "A Java 8 service",
+      "starter": {
+        "tests": 6,
+        "failing": [
+          "JavaVersionTest.runsOnJava11OrLater"
+        ]
+      },
+      "solution": {
+        "tests": 6
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": [
+          "03 The service runs on Java 11"
+        ],
+        "starterRuns": true
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "the JDK under a small export service, and its XML library"
+      }
+    },
+    {
+      "day": 26,
+      "folder": "day-26-triage-a-scanner-report",
+      "title": "Triage a Scanner Report",
+      "codebase": "modern",
+      "tagline": "Every finding gets a fix or a recorded decision",
+      "summary": "a SARIF report: fix, false positive, accept risk, duplicate",
+      "plain": "The organisation's security scanner has checked our code and sent a list of possible problems. Some are real and we fix them; some are mistakes by the tool; one is real but we choose to live with it for now. Today we decide for each one, and write down why.",
+      "build": "gradle",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 (use the wrapper)",
+        "framework": "Spring Boot 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "None today (a scanner report instead)"
+      },
+      "buildsOn": 19,
+      "starter": {
+        "tests": 42,
+        "failing": [
+          "NoHardcodedSecretsTest.noSecretLiteralsInMainCode",
+          "NoHardcodedSecretsTest.theApiKeyComesFromConfiguration",
+          "TokenHashingTest.tokensAreHashedWithSha256",
+          "TriageTest.everyFindingHasADecision"
+        ]
+      },
+      "solution": {
+        "tests": 42
+      },
+      "bruno": null,
+      "handoff": [
+        "TRIAGE.md",
+        "reports/RISK-ACCEPTANCE-TEMPLATE.md",
+        "reports/sast-report.sarif",
+        "src/main/java/com/example/accounts/config/NotificationsClient.java",
+        "src/main/java/com/example/accounts/service/TokenHasher.java",
+        "src/test/java/com/example/accounts/TriageTest.java",
+        "src/test/java/com/example/accounts/config/NoHardcodedSecretsTest.java",
+        "src/test/java/com/example/accounts/service/TokenHashingTest.java"
+      ],
+      "diagram": {
+        "box": "`NotificationsClient`, `TokenHasher` and the scan paperwork",
+        "change": "The notifications API key comes from configuration (`notifications.api-key`), not the code; API tokens are hashed with SHA-256, not MD5",
+        "why": "[SAST](glossary.md#sast) findings triaged: fix, [false positive](glossary.md#false-positive) or [accepted risk](glossary.md#accepted-risk)"
+      }
+    },
+    {
+      "day": 27,
+      "folder": "day-27-zero-day-drill",
+      "title": "Zero-Day Drill",
+      "codebase": "estate",
+      "tagline": "A critical CVE lands: find it, patch it, prove it, report it",
+      "summary": "Log4Shell across a multi-project build: `dependencyInsight`, one version, evidence",
+      "plain": "A serious security hole has been announced in a logging library that thousands of programs use. We have hours, not weeks, to find out which of our services contain it, update them, prove the update worked and report back. Today is a practice run of that emergency.",
+      "build": "gradle",
+      "gradle": "9.8.2",
+      "glance": {
+        "java": "Java 25",
+        "build": "Gradle 9.8 multi-project build: three services, two shared libraries (use the wrapper)",
+        "framework": "Plain Java (no Spring today)",
+        "database": "None",
+        "apiClient": "None today"
+      },
+      "buildsOn": null,
+      "startsFrom": "A new multi-project Gradle build: three services and two shared libraries",
+      "starter": {
+        "tests": 13,
+        "failing": [
+          "PaymentsLog4jVersionTest.log4jCoreIsPatched",
+          "PaymentsLog4jVersionTest.log4jCoreIsTheVersionInTheCatalog",
+          "StatementsLog4jVersionTest.log4jCoreIsPatched",
+          "StatementsLog4jVersionTest.log4jCoreIsTheVersionInTheCatalog"
+        ]
+      },
+      "solution": {
+        "tests": 13
+      },
+      "bruno": null,
+      "handoff": [],
+      "diagram": {
+        "box": "the libraries under every service, across the estate"
+      }
+    },
+    {
+      "day": 28,
+      "folder": "day-28-container-base-images",
+      "title": "Patch the Container, Not Just the Code",
+      "codebase": "legacy",
+      "tagline": "The base image is part of what we ship",
+      "summary": "a supported, matching, non-root base image",
+      "plain": "Our service doesn't run on its own: it ships inside a container image, which also holds a Java runtime and a small operating system. Those parts get security fixes too, and many findings in a scan are there, not in our code. Today we make the image use a supported, up-to-date base, the same Java version as the app, and an ordinary user instead of the all-powerful \"root\".",
+      "build": "gradle",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 21 (the image was still on 11)",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs); Docker optional",
+        "framework": "Spring Boot 3.5.16",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 13,
+      "starter": {
+        "tests": 16,
+        "failing": [
+          "DockerfileTest.finalImageJavaVersionMatchesTheToolchain",
+          "DockerfileTest.noStageUsesTheDeprecatedOpenjdkImage",
+          "DockerfileTest.finalStageRunsAsANonRootUser"
+        ]
+      },
+      "solution": {
+        "tests": 16
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": [],
+        "starterRuns": true
+      },
+      "handoff": [
+        "Dockerfile",
+        "src/test/java/com/example/accounts/DockerfileTest.java"
+      ],
+      "diagram": {
+        "box": "the container image around the whole app"
+      }
+    },
+    {
+      "day": 29,
+      "folder": "day-29-spring-boot-4-and-java-25",
+      "title": "The Next Hop: Spring Boot 4 on Java 25",
+      "codebase": "legacy",
+      "tagline": "Upgrade one step at a time, and log every error",
+      "summary": "Boot 3.5 → 4.1, Java 21 → 25, Gradle 8.14 → 9.8",
+      "plain": "The old service now runs on a version of its main framework that no longer gets free security fixes. The team's newer services already run on the next big release of that framework (version 4) and the latest Java. Today we move the old service up to match. We do it one step at a time and write down every error we hit, because the list of errors and fixes is what the next team will need.",
+      "build": "gradle",
+      "gradle": {
+        "starter": "8.14.6",
+        "solution": "9.8.2"
+      },
+      "glance": {
+        "java": "Java 21 → 25",
+        "build": "Gradle 8.14 → 9.8 (use the wrapper)",
+        "framework": "Spring Boot 3.5.16 → 4.1.2",
+        "database": "H2 (embedded)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": 13,
+      "starter": {
+        "tests": 15,
+        "failing": [
+          "PlatformVersionTest.runsOnJava25OrLater",
+          "PlatformVersionTest.runsOnSpringBoot4"
+        ]
+      },
+      "solution": {
+        "tests": 15
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": [],
+        "starterRuns": true
+      },
+      "handoff": [
+        "src/test/java/com/example/accounts/PlatformVersionTest.java"
+      ],
+      "diagram": {
+        "box": "the whole app's platform"
+      }
+    },
+    {
+      "day": 30,
+      "folder": "day-30-pre-boot-spring",
+      "title": "Move a Pre-Boot Spring App onto Spring Boot",
+      "codebase": "estate",
+      "tagline": "From XML and a WAR to @SpringBootApplication",
+      "summary": "XML beans, `web.xml` and a WAR → Spring Boot 2.7 with embedded Tomcat",
+      "plain": "Some of our older services were built with Spring before Spring Boot existed. They're wired together with XML files and have to be installed on a separate application server, which makes them slow to change and hard to upgrade. Today we move one onto Spring Boot, so it starts on its own and can follow the same upgrade path as our other services.",
+      "build": "gradle",
+      "gradle": "8.14.6",
+      "glance": {
+        "java": "Java 17",
+        "build": "Gradle 8.14 (use the wrapper; it downloads the JDKs)",
+        "framework": "Spring Framework 5.3.39 (WAR) → Spring Boot 2.7.18",
+        "database": "None (in memory)",
+        "apiClient": "Bruno"
+      },
+      "buildsOn": null,
+      "startsFrom": "A new pre-Boot Spring MVC codebase (WAR)",
+      "starter": {
+        "tests": 8,
+        "failing": [
+          "BootApplicationTest.bootAppServesAccountsOnEmbeddedTomcat",
+          "BootApplicationTest.webXmlIsGone"
+        ]
+      },
+      "solution": {
+        "tests": 8
+      },
+      "bruno": {
+        "requests": 3,
+        "failingOnStarter": [],
+        "starterRuns": false
+      },
+      "handoff": [],
+      "diagram": {
+        "box": "the whole (pre-Boot) app's wiring and packaging"
+      }
+    }
+  ]
+}

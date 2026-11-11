@@ -1,0 +1,33 @@
+meta {
+  name: Teller opens a GBP account for Grace
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: teller
+  password: teller-pass
+}
+
+body:json {
+  {
+    "username": "grace",
+    "owner": "Grace Hopper",
+    "currency": "GBP",
+    "openingBalance": 0
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+script:post-response {
+  bru.setVar("toAccountId", res.body.id);
+}

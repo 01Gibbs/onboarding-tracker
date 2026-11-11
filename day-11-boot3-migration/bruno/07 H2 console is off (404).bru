@@ -1,0 +1,15 @@
+meta {
+  name: H2 console is off (404)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/h2-console/
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+}

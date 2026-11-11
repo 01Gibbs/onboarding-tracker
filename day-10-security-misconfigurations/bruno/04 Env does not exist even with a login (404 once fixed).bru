@@ -1,0 +1,20 @@
+meta {
+  name: Env does not exist even with a login (404 once fixed)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/actuator/env
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: teller
+  password: teller-pass
+}
+
+assert {
+  res.status: eq 404
+}

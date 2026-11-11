@@ -1,0 +1,22 @@
+meta {
+  name: Ada's balance went down by 50
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/accounts/1
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body.balance: eq 1200
+  res.body.accountNumber: eq "****5678"
+}

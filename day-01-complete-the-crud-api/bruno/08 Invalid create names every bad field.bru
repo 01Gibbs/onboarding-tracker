@@ -1,0 +1,28 @@
+meta {
+  name: Invalid create names every bad field
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "",
+    "currency": "EURO",
+    "openingBalance": -5
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Invalid request"
+  res.body.errors.owner: eq "must not be blank"
+  res.body.errors.currency: isDefined
+  res.body.errors.openingBalance: isDefined
+  res.headers.content-type: contains problem+json
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Its key was not kept, so a corrected retry goes through
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+headers {
+  Idempotency-Key: ada-too-much-{{toAccountId}}
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 10.00
+  }
+}
+
+assert {
+  res.status: eq 204
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Teller reads any account
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/accounts/2
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: teller
+  password: teller-pass
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Customer cannot list every account (403)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/accounts
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 403
+}

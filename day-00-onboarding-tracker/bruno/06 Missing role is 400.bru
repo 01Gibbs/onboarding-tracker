@@ -1,0 +1,22 @@
+meta {
+  name: Missing role is 400
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/employees
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Asha Rao",
+    "onboardingDate": "2026-11-10"
+  }
+}
+
+assert {
+  res.status: eq 400
+}

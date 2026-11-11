@@ -1,0 +1,22 @@
+meta {
+  name: A quote in the currency finds nothing
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/mine?currency=GBP%27%20OR%20%271%27%3D%271
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+  res.body[0]: isUndefined
+}

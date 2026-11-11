@@ -1,0 +1,23 @@
+meta {
+  name: Ada's GBP accounts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/accounts/mine?currency=GBP
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+  res.body[0].owner: eq "Ada Lovelace"
+  res.body[1]: isUndefined
+}

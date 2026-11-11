@@ -1,0 +1,22 @@
+meta {
+  name: Update the owner
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/accounts/{{accountId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "Linus T."
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.owner: eq "Linus T."
+}

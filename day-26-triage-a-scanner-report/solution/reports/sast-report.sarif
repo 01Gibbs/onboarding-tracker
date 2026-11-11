@@ -1,0 +1,128 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Example SAST",
+          "version": "4.2.0",
+          "informationUri": "https://example.com/sast",
+          "rules": [
+            {
+              "id": "java/hardcoded-credential",
+              "name": "HardcodedCredential",
+              "shortDescription": { "text": "Hard-coded credential" },
+              "fullDescription": { "text": "A password, API key or other secret is written into the source code. Anyone who can read the code, or a build made from it, can use it." },
+              "helpUri": "https://cwe.mitre.org/data/definitions/798.html",
+              "defaultConfiguration": { "level": "error" },
+              "properties": { "tags": ["security", "CWE-798"], "security-severity": "7.5" }
+            },
+            {
+              "id": "java/weak-hash-algorithm",
+              "name": "WeakHashAlgorithm",
+              "shortDescription": { "text": "Use of a broken or weak hash algorithm" },
+              "fullDescription": { "text": "MD5 and SHA-1 are broken: collisions can be found cheaply. Use SHA-256 or stronger, or a password encoder for passwords." },
+              "helpUri": "https://cwe.mitre.org/data/definitions/328.html",
+              "defaultConfiguration": { "level": "warning" },
+              "properties": { "tags": ["security", "CWE-328"], "security-severity": "5.9" }
+            },
+            {
+              "id": "java/sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": { "text": "Database query built from user-controlled data" },
+              "fullDescription": { "text": "Data from an HTTP request reaches a database query. If the data is concatenated into the query text, an attacker can change the query." },
+              "helpUri": "https://cwe.mitre.org/data/definitions/89.html",
+              "defaultConfiguration": { "level": "error" },
+              "properties": { "tags": ["security", "CWE-89"], "security-severity": "8.8" }
+            },
+            {
+              "id": "config/h2-console-enabled",
+              "name": "H2ConsoleEnabled",
+              "shortDescription": { "text": "H2 database console enabled" },
+              "fullDescription": { "text": "The H2 web console is a development tool that gives full access to the database. It should not be enabled in a deployed service." },
+              "helpUri": "https://cwe.mitre.org/data/definitions/489.html",
+              "defaultConfiguration": { "level": "warning" },
+              "properties": { "tags": ["security", "CWE-489"], "security-severity": "6.5" }
+            },
+            {
+              "id": "secrets/generic-api-key",
+              "name": "GenericApiKey",
+              "shortDescription": { "text": "Generic API key detected" },
+              "fullDescription": { "text": "A string that looks like a live API key (a known prefix followed by a long random-looking value)." },
+              "helpUri": "https://cwe.mitre.org/data/definitions/798.html",
+              "defaultConfiguration": { "level": "error" },
+              "properties": { "tags": ["security", "secrets", "CWE-798"], "security-severity": "7.5" }
+            }
+          ]
+        }
+      },
+      "automationDetails": { "id": "accounts-api/main/2026-11-10" },
+      "versionControlProvenance": [
+        { "repositoryUri": "https://git.example.com/team/accounts-api", "branch": "main" }
+      ],
+      "results": [
+        {
+          "ruleId": "java/hardcoded-credential",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": { "text": "Hard-coded credential assigned to 'API_KEY'." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/com/example/accounts/config/NotificationsClient.java" }, "region": { "startLine": 10, "snippet": { "text": "private static final String API_KEY = \"ntf_live_7Hq2xV9pLm4Rt8Wz3Kc6Yb1N\";" } } } }
+          ],
+          "properties": { "findingId": "SAST-101" }
+        },
+        {
+          "ruleId": "java/weak-hash-algorithm",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": { "text": "MessageDigest.getInstance(\"MD5\") uses a broken hash algorithm." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/com/example/accounts/service/TokenHasher.java" }, "region": { "startLine": 16, "snippet": { "text": "MessageDigest digest = MessageDigest.getInstance(\"MD5\");" } } } }
+          ],
+          "properties": { "findingId": "SAST-102" }
+        },
+        {
+          "ruleId": "java/sql-injection",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": { "text": "Request parameter 'currency' flows into a database query in AccountRepository.findByUsernameAndCurrency." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/com/example/accounts/service/AccountService.java" }, "region": { "startLine": 51, "snippet": { "text": "return accountRepository.findByUsernameAndCurrency(username, currency);" } } } }
+          ],
+          "properties": { "findingId": "SAST-103" }
+        },
+        {
+          "ruleId": "java/hardcoded-credential",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": { "text": "Hard-coded password \"ada-pass\" passed to 'encode'." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/test/java/com/example/accounts/config/PasswordStorageTest.java" }, "region": { "startLine": 39, "snippet": { "text": "String hash = encoder.encode(\"ada-pass\");" } } } }
+          ],
+          "properties": { "findingId": "SAST-104" }
+        },
+        {
+          "ruleId": "config/h2-console-enabled",
+          "ruleIndex": 3,
+          "level": "warning",
+          "message": { "text": "spring.h2.console.enabled=true exposes the H2 web console." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/main/resources/application.properties" }, "region": { "startLine": 14, "snippet": { "text": "spring.h2.console.enabled=true" } } } }
+          ],
+          "properties": { "findingId": "SAST-105" }
+        },
+        {
+          "ruleId": "secrets/generic-api-key",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": { "text": "Possible live API key (prefix 'ntf_live_')." },
+          "locations": [
+            { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/com/example/accounts/config/NotificationsClient.java" }, "region": { "startLine": 10, "snippet": { "text": "private static final String API_KEY = \"ntf_live_7Hq2xV9pLm4Rt8Wz3Kc6Yb1N\";" } } } }
+          ],
+          "properties": { "findingId": "SAST-106" }
+        }
+      ]
+    }
+  ]
+}

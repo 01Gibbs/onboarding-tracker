@@ -1,0 +1,23 @@
+meta {
+  name: Wrong date format is 400
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/employees
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Asha Rao",
+    "role": "Engineer",
+    "onboardingDate": "10-11-2026"
+  }
+}
+
+assert {
+  res.status: eq 400
+}

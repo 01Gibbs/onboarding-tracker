@@ -1,0 +1,15 @@
+meta {
+  name: Bug 6 - DELETE deletes
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/accounts/{{accountId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}

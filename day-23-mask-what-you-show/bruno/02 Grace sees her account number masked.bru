@@ -1,0 +1,21 @@
+meta {
+  name: Grace sees her account number masked
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/2
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: grace
+  password: grace-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body.accountNumber: eq "****4321"
+}

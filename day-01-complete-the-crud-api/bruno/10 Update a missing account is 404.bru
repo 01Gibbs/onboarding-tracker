@@ -1,0 +1,22 @@
+meta {
+  name: Update a missing account is 404
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{baseUrl}}/accounts/99
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "Nobody"
+  }
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

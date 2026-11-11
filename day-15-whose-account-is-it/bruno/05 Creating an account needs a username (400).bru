@@ -1,0 +1,29 @@
+meta {
+  name: Creating an account needs a username (400)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: teller
+  password: teller-pass
+}
+
+body:json {
+  {
+    "owner": "Linus Torvalds",
+    "currency": "GBP",
+    "openingBalance": 10
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.username: isDefined
+}

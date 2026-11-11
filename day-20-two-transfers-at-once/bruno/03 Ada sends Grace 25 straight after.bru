@@ -1,0 +1,27 @@
+meta {
+  name: Ada sends Grace 25 straight after
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 25.00
+  }
+}
+
+assert {
+  res.status: eq 204
+}

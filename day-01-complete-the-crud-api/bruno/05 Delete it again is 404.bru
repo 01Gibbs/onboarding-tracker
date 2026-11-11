@@ -1,0 +1,15 @@
+meta {
+  name: Delete it again is 404
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/accounts/{{accountId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+}

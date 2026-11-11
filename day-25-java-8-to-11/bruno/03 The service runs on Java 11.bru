@@ -1,0 +1,16 @@
+meta {
+  name: The service runs on Java 11
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/actuator/info
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.java.version: startsWith 11.
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Create an account
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/accounts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "owner": "Linus Torvalds",
+    "currency": "EUR",
+    "openingBalance": 500.0
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.headers.location: isDefined
+  res.body.id: isDefined
+  res.body.owner: eq "Linus Torvalds"
+}
+
+script:post-response {
+  bru.setVar("accountId", res.body.id);
+}

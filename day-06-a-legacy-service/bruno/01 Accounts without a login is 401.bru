@@ -1,0 +1,15 @@
+meta {
+  name: Accounts without a login is 401
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/accounts
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}

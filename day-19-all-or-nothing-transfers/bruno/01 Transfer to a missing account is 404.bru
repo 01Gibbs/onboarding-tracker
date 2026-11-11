@@ -1,0 +1,28 @@
+meta {
+  name: Transfer to a missing account is 404
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": 999,
+    "amount": 50.0
+  }
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

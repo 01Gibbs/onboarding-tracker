@@ -1,0 +1,28 @@
+meta {
+  name: Ada cannot send from Grace's account (404)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/accounts/2/transfers
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": 1,
+    "amount": 10
+  }
+}
+
+assert {
+  res.status: eq 404
+  res.body.title: eq "Account not found"
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Get Employees (empty or not, always an array)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/employees
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}

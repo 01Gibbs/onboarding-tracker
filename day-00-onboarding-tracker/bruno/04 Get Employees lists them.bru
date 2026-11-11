@@ -1,0 +1,17 @@
+meta {
+  name: Get Employees lists them
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/employees
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+  res.body[0].id: isDefined
+}

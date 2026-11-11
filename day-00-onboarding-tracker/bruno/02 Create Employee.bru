@@ -1,0 +1,27 @@
+meta {
+  name: Create Employee
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/employees
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Asha Rao",
+    "role": "Engineer",
+    "onboardingDate": "2026-11-10"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.name: eq "Asha Rao"
+  res.body.role: eq Engineer
+  res.body.onboardingDate: eq "2026-11-10"
+}

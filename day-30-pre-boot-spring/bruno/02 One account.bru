@@ -1,0 +1,17 @@
+meta {
+  name: One account
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/accounts/ACC-2
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq ACC-2
+  res.body.owner: eq Grace
+}

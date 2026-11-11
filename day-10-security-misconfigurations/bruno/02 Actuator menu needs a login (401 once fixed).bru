@@ -1,0 +1,15 @@
+meta {
+  name: Actuator menu needs a login (401 once fixed)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/actuator
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}

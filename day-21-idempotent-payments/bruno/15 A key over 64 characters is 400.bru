@@ -1,0 +1,32 @@
+meta {
+  name: A key over 64 characters is 400
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+headers {
+  Idempotency-Key: kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 5.0
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.title: eq "Idempotency key required"
+}

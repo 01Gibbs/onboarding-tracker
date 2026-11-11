@@ -1,0 +1,21 @@
+meta {
+  name: Ada reads her own account
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/accounts/1
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+assert {
+  res.status: eq 200
+  res.body.owner: eq "Ada Lovelace"
+}

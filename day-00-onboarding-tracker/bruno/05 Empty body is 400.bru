@@ -1,0 +1,19 @@
+meta {
+  name: Empty body is 400
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/employees
+  body: json
+  auth: none
+}
+
+body:json {
+  {}
+}
+
+assert {
+  res.status: eq 400
+}

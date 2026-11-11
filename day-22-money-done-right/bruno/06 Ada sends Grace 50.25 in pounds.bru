@@ -1,0 +1,31 @@
+meta {
+  name: Ada sends Grace 50.25 in pounds
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/accounts/1/transfers
+  body: json
+  auth: basic
+}
+
+headers {
+  Idempotency-Key: ada-pays-grace-{{toAccountId}}
+}
+
+auth:basic {
+  username: ada
+  password: ada-pass
+}
+
+body:json {
+  {
+    "toAccountId": "{{toAccountId}}",
+    "amount": 50.25
+  }
+}
+
+assert {
+  res.status: eq 204
+}

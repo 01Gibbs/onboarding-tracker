@@ -1,0 +1,17 @@
+meta {
+  name: Accounts list is JSON
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/accounts
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].owner: eq Ada Lovelace
+  res.body[1].currency: eq USD
+}

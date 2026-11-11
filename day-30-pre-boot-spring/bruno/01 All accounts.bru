@@ -1,0 +1,20 @@
+meta {
+  name: All accounts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/accounts
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+  res.body[0].owner: eq Ada
+  res.body[0].currency: eq GBP
+  res.body[1].owner: eq Grace
+  res.body[2]: isUndefined
+}

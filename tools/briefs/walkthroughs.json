@@ -1,0 +1,1314 @@
+[
+ {
+  "day": 0,
+  "tour": [
+   [
+    "`Employee.java`",
+    "An `@Entity` class (not a record: JPA needs a no-argument constructor and setters/reflection). `LocalDate onboardingDate`: dates use `java.time`, never `java.util.Date`."
+   ],
+   [
+    "`CreateEmployeeRequest.java`",
+    "A **record** DTO with `@NotBlank` / `@NotNull`. The client never sends `id`."
+   ],
+   [
+    "`EmployeeController.java`",
+    "`@Valid @RequestBody` triggers validation → 400. `ResponseEntity.created(uri).body(saved)` gives 201 + `Location`. `GET` returns `findAll()`: an empty list serialises to `[]`."
+   ],
+   [
+    "Dates",
+    "`\"10-11-2026\"` never reaches our code: Jackson can't parse it into a `LocalDate`, so Spring answers 400 itself. Same for `2026-02-30`."
+   ],
+   [
+    "`EmployeeApiTest.java`",
+    "The brief's contract as {{solution.tests}} tests, through the whole app with an in-memory H2 (`@SpringBootTest` + MockMvc). Tomorrow's work is checked the same way."
+   ],
+   [
+    "`bruno/`",
+    "The brief's section 6 as {{bruno.requests}} requests with assertions: run the collection, read ✅/❌."
+   ]
+  ],
+  "points": [
+   "If AI wrote parts of your solution, today's question is: could you explain every annotation in it? Walk through `reference/java-idioms.md`: records vs classes, `LocalDate`, `BigDecimal` for money (tomorrow's domain is accounts), `Optional`, `List.of`, `==` vs `.equals`.",
+   "Validation belongs at the edge (`@Valid`), before the database ever sees bad data. Without it, a missing field is a 500 from the database, not a 400.",
+   "201 + `Location` is how HTTP says \"created, and here it is\".",
+   "Tomorrow switches domain to an **Accounts API**: same shape (entity, repository, POST/GET, validation), plus money."
+  ],
+  "mistakes": [
+   "Returning 200 from POST, or no body.",
+   "`String onboardingDate` with a regex instead of `LocalDate` (you then have to reject `2026-02-30` yourself).",
+   "Running `./gradlew` from the wrong folder: `no such file or directory: ./gradlew`."
+  ],
+  "questions": [
+   [
+    "What happens without `@Valid`?",
+    "The constraints are ignored. A blank name is saved; a missing one fails at the database as a 500."
+   ],
+   [
+    "Why is `Employee` a class but the request a record?",
+    "JPA needs a mutable class with a no-argument constructor; the request is immutable data."
+   ]
+  ],
+  "bridge": "one entity and its repository in one of our own services. Which ID generation does it use?",
+  "tomorrow": "An Accounts API at exactly tonight's level: finish it with `PUT`, `DELETE`, 404s and one consistent error format."
+ },
+ {
+  "day": 1,
+  "tour": [
+   [
+    "`exception/AccountNotFoundException.java`",
+    "A plain `RuntimeException` (unchecked). The service throws it; it knows nothing about HTTP."
+   ],
+   [
+    "`service/AccountService.java`",
+    "`getById` uses `findById(id).orElseThrow(() -> new AccountNotFoundException(id))`; `updateOwner` reuses `getById`; `delete` checks `existsById` first."
+   ],
+   [
+    "`controller/AccountController.java`",
+    "`@PutMapping` with `@Valid @RequestBody UpdateAccountRequest`; `@DeleteMapping` + `@ResponseStatus(NO_CONTENT)`. The controller has no `if (missing)` anywhere."
+   ],
+   [
+    "`exception/ApiExceptionHandler.java`",
+    "`@RestControllerAdvice` with two `@ExceptionHandler`s returning `ProblemDetail`. The validation handler builds the `errors` map from `getFieldErrors()`."
+   ]
+  ],
+  "points": [
+   "Throw in the service, translate in one place. Every endpoint that throws `AccountNotFoundException` gets the same 404 for free.",
+   "`ProblemDetail`'s `status` sets the HTTP status, and the content type becomes `application/problem+json` (RFC 9457).",
+   "Spring Boot hides exception messages by default. Only put in `detail` what's safe for the caller to see.",
+   "Why `UpdateAccountRequest` has no currency: changing the currency of an account holding money isn't an update."
+  ],
+  "mistakes": [
+   "Returning `ResponseEntity.notFound()` from every controller method instead of throwing: duplicated, and easy to forget on a new endpoint.",
+   "Keeping `@ResponseStatus` on the exception *and* a handler: two places to change.",
+   "`DELETE` returning 200 with a body, or 204 for a missing id."
+  ],
+  "questions": [
+   [
+    "Should a second `DELETE` of the same account be 404 or 204?",
+    "Both are defended in practice. 404 is honest; 204 makes `DELETE` idempotent for retries. Pick one and be consistent."
+   ],
+   [
+    "What does `GET /accounts/abc` return, and why isn't it a problem detail?",
+    "400 from Spring's own type conversion, which our handler doesn't cover. `spring.mvc.problemdetails.enabled=true` covers Spring's errors too."
+   ]
+  ],
+  "tomorrow": "A colleague's pull request built on today's API, with six bugs in it. Tomorrow is a code review.",
+  "bridge": "our services' `@ControllerAdvice` (or whatever produces error bodies). Is it RFC 9457?"
+ },
+ {
+  "day": 2,
+  "tour": [
+   [
+    "Bug 1: `c == \"GBP\"`",
+    "`==` compares object identity. The JSON's `\"GBP\"` is a different object. Fixed for good by `SupportedCurrencies` (a `Set.of(...)`)."
+   ],
+   [
+    "Bug 2: `double openingBalance` + `new BigDecimal(double)`",
+    "Copies binary rounding error exactly. The DTO field becomes `BigDecimal`."
+   ],
+   [
+    "Bug 3: missing `@Valid`",
+    "The constraint annotations do nothing without it."
+   ],
+   [
+    "Bug 4: `return account`",
+    "Back to `ResponseEntity.created(uri).body(...)`."
+   ],
+   [
+    "Bug 5: `findById(id).get()`",
+    "`NoSuchElementException` → 500. `orElseThrow` → our 404."
+   ],
+   [
+    "Bug 6: `@GetMapping(\"/delete/{id}\")`",
+    "GET must be safe: crawlers and link previews send GETs."
+   ]
+  ],
+  "points": [
+   "Follow the symptom: status code → log → stack trace. Top line = *what*; first `com.example` line = *where*.",
+   "Fix one bug at a time and re-test; that's how you know which change fixed what."
+  ],
+  "mistakes": [
+   "Fixing bug 1 with `.equals` chains and stopping there. It works, but the rule belongs in one named place.",
+   "Mapping `IllegalArgumentException` to 400 globally: it would hide real bugs as client errors."
+  ],
+  "questions": [
+   [
+    "Which of the six would a test have caught most cheaply?",
+    "Bugs 1, 2 and 5 with a service unit test; 3, 4 and 6 with a controller slice test. That's Days 4 and 5."
+   ]
+  ],
+  "tomorrow": "The same pull request now works, but its design has drifted. Tomorrow: refactor it without changing what a client sees.",
+  "bridge": "a real bug-fix pull request in our services: find the line that was wrong and the test that now guards it."
+ },
+ {
+  "day": 3,
+  "tour": [
+   [
+    "Constructor injection",
+    "`private final` fields set by the constructor; no `@Autowired` fields. Spring passes the beans in."
+   ],
+   [
+    "Layers",
+    "The controller calls only the service; the repository field is gone from the controller."
+   ],
+   [
+    "Names",
+    "`doStuff(r)` → `create(request)`: done with the IDE's Rename, so every usage changes."
+   ],
+   [
+    "`SupportedCurrencies` + `UnsupportedCurrencyException`",
+    "One named home for the rule; a new `@ExceptionHandler` makes it a 400 `Unsupported currency`."
+   ],
+   [
+    "`AccountResponse`",
+    "A record with `from(Account)`: the public contract no longer follows the database model."
+   ]
+  ],
+  "points": [
+   "Refactoring = same behaviour. The Bruno collection, run before and after each step, is the proof.",
+   "Constructor injection makes dependencies visible and testable: `new AccountService(fakeRepository)` (tomorrow).",
+   "Response DTOs decouple the database model from the API contract."
+  ],
+  "mistakes": [
+   "Find-and-replace renames instead of the IDE's Rename refactoring.",
+   "Mapping every `IllegalArgumentException` to 400: it would hide real bugs as client errors."
+  ],
+  "questions": [
+   [
+    "Why is constructor injection easier to test than `@Autowired` fields?",
+    "A test can call `new AccountService(fakeRepository)`: no Spring, no reflection."
+   ]
+  ],
+  "tomorrow": "Write the tests that would have caught these bugs: plain unit tests, then the service with a mocked repository.",
+  "bridge": "a service class in our code with field injection, or one with constructor injection. Which is easier to test?"
+ },
+ {
+  "day": 4,
+  "tour": [
+   [
+    "`SupportedCurrenciesTest`",
+    "Plain JUnit + AssertJ: no Spring, milliseconds. Names describe behaviour."
+   ],
+   [
+    "`AccountServiceTest`",
+    "`@ExtendWith(MockitoExtension.class)`, `@Mock AccountRepository`, `@InjectMocks AccountService`. Arrange (`when`) / Act / Assert."
+   ],
+   [
+    "`createSavesTheNewAccount`",
+    "`thenAnswer(call -> call.getArgument(0))`: a mock's `save` returns `null` unless scripted."
+   ],
+   [
+    "`createRejectsAnUnsupportedCurrency`",
+    "`assertThatThrownBy` + `verify(repo, never()).save(any())`: proving something did *not* happen."
+   ]
+  ],
+  "points": [
+   "`isEqualByComparingTo(\"10.00\")` for money: `isEqualTo` fails on `10.0` vs `10.00` (scale).",
+   "Test behaviour, not implementation: would this test survive a refactor that keeps behaviour?",
+   "The HTML report says *why* a test failed; the terminal often only says *that* it did."
+  ],
+  "mistakes": [
+   "Using `@SpringBootTest` for a unit test: slow, and tests the wiring instead of the logic.",
+   "Over-verifying (`verify` on every call): tests then break on harmless refactors.",
+   "Not seeing a test fail first. Break the code on purpose once."
+  ],
+  "questions": [
+   [
+    "When is a mock the wrong tool?",
+    "When the thing you want to check *is* the dependency's behaviour, e.g. a query. That needs a real database: Day 5."
+   ]
+  ],
+  "tomorrow": "Tests that start part of Spring: the web layer and JPA.",
+  "bridge": "a Mockito test in our services. Does it test behaviour or implementation?"
+ },
+ {
+  "day": 5,
+  "tour": [
+   [
+    "`AccountControllerTest`",
+    "`@WebMvcTest(AccountController.class)` + `MockMvc` + `@MockitoBean AccountService`. Status, `jsonPath`, and `verifyNoInteractions` after a 400."
+   ],
+   [
+    "404 test",
+    "Asserts `$.title == \"Account not found\"`: proves `ApiExceptionHandler` is part of the slice."
+   ],
+   [
+    "`AccountRepositoryTest`",
+    "`@DataJpaTest`: fresh in-memory H2, each test rolled back."
+   ],
+   [
+    "The pyramid",
+    "Plain → Mockito → `@DataJpaTest` / `@WebMvcTest` → `@SpringBootTest`. Start at the bottom."
+   ]
+  ],
+  "points": [
+   "`@MockitoBean` puts a mock *into Spring*; `@Mock` is Mockito only. `@MockBean` was removed in Boot 4 (you'll meet it on Day 6).",
+   "Repository tests earn their keep for custom queries, not for `findById`.",
+   "{{solution.tests}} tests now. Every one runs in seconds."
+  ],
+  "mistakes": [
+   "Asserting only status codes: a 404 from a typo in the URL looks the same as our handler's 404.",
+   "Expecting `@DataJpaTest` to see the app's `./data` file."
+  ],
+  "questions": [
+   [
+    "Which test for: a `PUT` with a blank owner is 400? `findByCurrency` filters? `delete` throws for a missing id?",
+    "`@WebMvcTest`; `@DataJpaTest`; Mockito unit test."
+   ]
+  ],
+  "tomorrow": "A different service: the same API written in 2022 on Java 11 and Boot 2.7. Get it running and audit it.",
+  "bridge": "the test report of one of our services: how many tests of each kind?"
+ },
+ {
+  "day": 6,
+  "tour": [
+   [
+    "`gradle/wrapper/gradle-wrapper.properties`",
+    "Gradle 8.14.6: Boot 2.7's plugin breaks on Gradle 9."
+   ],
+   [
+    "`gradle/gradle-daemon-jvm.properties`",
+    "Gradle itself runs on JDK 17 (8.14 can't run on 25). The error without it is just `What went wrong: 25.0.x`."
+   ],
+   [
+    "`build.gradle.kts` toolchain + `settings.gradle.kts` foojay",
+    "Code compiles on JDK 11; missing JDKs are downloaded."
+   ],
+   [
+    "`SecurityConfig.java`",
+    "`WebSecurityConfigurerAdapter`, `antMatchers`, `.and()` chains, `permitAll()` vs `authenticated()`, `httpBasic()`."
+   ],
+   [
+    "`solution/AUDIT.md`",
+    "Compare markers: `javax.*`, getter/setter DTOs, JUnit 4, `@MockBean`, the adapter, the `h2.version` pin."
+   ]
+  ],
+  "points": [
+   "Two JDKs: the daemon runs Gradle, the toolchain compiles your code. Old projects often need both to be older than your laptop's.",
+   "Boot 2.7 open-source support ended 2023-06-30: security fixes stopped.",
+   "An audit is evidence for a decision, not a to-do list."
+  ],
+  "mistakes": [
+   "Installing JDK 11 globally or changing `JAVA_HOME` instead of letting the toolchain handle it.",
+   "Bumping the wrapper to Gradle 9 to \"fix\" the daemon error."
+  ],
+  "questions": [
+   [
+    "What in the 'risky' list worries you most, and why?",
+    "Usually the actuator `permitAll()` and the H2 console. Those are Day 10. The `h2.version` pin is Days 8–9."
+   ]
+  ],
+  "tomorrow": "This service's tests are half JUnit 4. Read them, add to them, then migrate them.",
+  "bridge": "one of our services' `build.gradle(.kts)`: which Java and Boot versions, and are they still supported?"
+ },
+ {
+  "day": 7,
+  "tour": [
+   [
+    "JUnit 4 `AccountServiceTest`",
+    "`@RunWith(MockitoJUnitRunner.class)`, `@Before`, `@Test(expected = …)`, `Assert.assertEquals(expected, actual)`: expected first."
+   ],
+   [
+    "The three new tests",
+    "`Assert.assertThrows` exists from JUnit 4.13."
+   ],
+   [
+    "Migration",
+    "`@RunWith` → `@ExtendWith` (or nothing with Spring Boot 2.2+ `@SpringBootTest`), `@Before` → `@BeforeEach`, `expected` → `assertThatThrownBy`, `Assert` → AssertJ."
+   ],
+   [
+    "`build.gradle.kts`",
+    "`junit-vintage-engine` removed. Count before = count after = 9."
+   ]
+  ],
+  "points": [
+   "The JUnit Platform runs engines: Jupiter (5) and Vintage (4) side by side.",
+   "The trap: `junit:junit` still on the classpath without Vintage compiles, goes green, and silently runs only the JUnit 5 tests.",
+   "OpenRewrite has recipes for this (`SpringBoot2JUnit4to5Migration`); Boot 3 upgrade recipes include it."
+  ],
+  "mistakes": [
+   "`assertEquals(actual, expected)`: passes or fails the same, but the failure message is backwards.",
+   "Trusting a green build without checking the test count."
+  ],
+  "questions": [
+   [
+    "Why migrate tests before the Boot 3 upgrade, not during?",
+    "One change at a time: if the upgrade breaks something, you want a test suite you trust."
+   ]
+  ],
+  "tomorrow": "What does this service actually ship? Lockfile, scan, trace.",
+  "bridge": "any `org.junit.Test` import left in our services."
+ },
+ {
+  "day": 8,
+  "tour": [
+   [
+    "`./gradlew -q dependencies --configuration runtimeClasspath`",
+    "`->` = a different version was chosen; most of the tree is transitive."
+   ],
+   [
+    "`dependencyLocking { lockAllConfigurations() }` + `gradle.lockfile`",
+    "A flat list scanners read; the build now fails if versions drift."
+   ],
+   [
+    "The scan",
+    "Totals, then triage. Don't panic at the number."
+   ],
+   [
+    "`dependencyInsight --dependency h2`",
+    "\"Selected by rule\": **our** pin. SnakeYAML comes from `spring-boot-starter`."
+   ],
+   [
+    "`solution/FINDINGS.md`",
+    "Compare top-findings tables and first impressions."
+   ]
+  ],
+  "points": [
+   "You ship what's on `runtimeClasspath`, not what you typed.",
+   "Flagged ≠ exploitable. SnakeYAML's CVE-2022-1471 in a Boot app is the classic example (spring-boot#33457).",
+   "OWASP A03:2025 Software Supply Chain Failures."
+  ],
+  "mistakes": [
+   "Scanning `build.gradle.kts` instead of the resolved versions.",
+   "Treating the advisory count as the risk."
+  ],
+  "questions": [
+   [
+    "Which finding did *we* cause?",
+    "The `h2.version = 1.4.200` pin \"for now\" from 2021."
+   ]
+  ],
+  "tomorrow": "Fix what a patch bump can fix, and write down a decision for the rest.",
+  "bridge": "our CI's dependency-scan report for one service."
+ },
+ {
+  "day": 9,
+  "tour": [
+   [
+    "`extra[\"…version\"]` overrides",
+    "The `io.spring.dependency-management` plugin reads version properties. Gradle `constraints {}` are silently ignored here."
+   ],
+   [
+    "Red build 1",
+    "The lockfile no longer matches: regenerate with `--write-locks`."
+   ],
+   [
+    "Red build 2",
+    "`contextLoads` fails: H2 2.x can't open a file written by 1.4. On a laptop, `rm -rf data`; in production, export with the old version and import with the new."
+   ],
+   [
+    "`solution/FINDINGS.md`",
+    "Before/after totals, a decision per finding, the conclusion paragraph."
+   ]
+  ],
+  "points": [
+   "Patch bump inside a line = low risk; line jump = migration.",
+   "Every override needs a reason and a removal condition in a comment.",
+   "Some CRITICALs can't be fixed on Boot 2.7 at all (Spring Framework 5.3 / Security 5.7 are out of open-source support). That's the business case for Day 11."
+  ],
+  "mistakes": [
+   "Deleting `data/` and moving on without noticing it's a production migration hazard.",
+   "\"Accepted risk\" without a reason anyone could challenge."
+  ],
+  "questions": [
+   [
+    "H2's remaining HIGH is disputed by its maintainers. Is accepting it reasonable?",
+    "More reasonable once the console is dev-only. That's tomorrow."
+   ]
+  ],
+  "tomorrow": "Configuration, not libraries: the actuator, the H2 console and a committed secret.",
+  "bridge": "a version override in one of our builds. Does it say why, and when to remove it?"
+ },
+ {
+  "day": 10,
+  "tour": [
+   [
+    "`application.properties`",
+    "`management.endpoints.web.exposure.include=health,info`; shutdown line gone; H2 console lines gone; `accounts.fx-provider.api-credential=${FX_API_CREDENTIAL:}`."
+   ],
+   [
+    "`application-dev.properties`",
+    "The console, for the `dev` profile only."
+   ],
+   [
+    "`SecurityConfig.java`",
+    "`.antMatchers(\"/actuator/health\", \"/actuator/info\").permitAll()` instead of `/actuator/**`."
+   ],
+   [
+    "`H2ConsoleTest`",
+    "Starts a real server (`RANDOM_PORT`): the console is its own servlet, invisible to `MockMvc`."
+   ]
+  ],
+  "points": [
+   "Two layers: don't expose it (exposure) *and* don't let strangers reach it (security rules). Defence in depth.",
+   "Boot 2.7 masks only keys *ending* in `password`, `secret`, `key`, `token`…: `api-credential` leaked in plain text.",
+   "A committed secret must be **rotated**: deleting the line doesn't remove it from Git history.",
+   "OWASP A02:2025 Security Misconfiguration."
+  ],
+  "mistakes": [
+   "Fixing only `SecurityConfig` (endpoints still exposed to anyone who logs in) or only the exposure.",
+   "Calling `/actuator/shutdown` while exploring."
+  ],
+  "questions": [
+   [
+    "We disable CSRF in `SecurityConfig`. When is that OK?",
+    "When no browser holds a session cookie for the API (stateless, HTTP Basic or tokens). Day 14 comes back to it."
+   ]
+  ],
+  "tomorrow": "Move to Boot 3.5 and Java 17 with OpenRewrite, and fix what it misses.",
+  "bridge": "which actuator endpoints one of our services exposes, and to whom."
+ },
+ {
+  "day": 11,
+  "tour": [
+   [
+    "`rewrite.patch` (dry run)",
+    "`javax` → `jakarta`, `SecurityFilterChain` bean, `requestMatchers`, lambdas, toolchain 17, Boot 3.5.16. And an odd `jaxb-api` line."
+   ],
+   [
+    "❌ `requestMatchers` doesn't compile",
+    "Our own `extra[\"spring-security.version\"] = \"5.7.13\"` from Day 9 still pins Security 5. OpenRewrite doesn't know about our overrides: delete the whole block."
+   ],
+   [
+    "Lockfile",
+    "Delete and regenerate after removing the plugin; `rm -rf data` (H2 file format again)."
+   ],
+   [
+    "`@MockBean` → `@MockitoBean`",
+    "Deprecated in 3.5, removed in Boot 4: clear it now."
+   ],
+   [
+    "❌ 404 became 401",
+    "Security 6 authorizes error dispatches: `.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()`. Day 10's regression test caught it."
+   ]
+  ],
+  "points": [
+   "Read the patch before applying it. Tools don't know your intent or your overrides.",
+   "Regression tests are what make a big upgrade safe."
+  ],
+  "mistakes": [
+   "Regenerating the lockfile before removing the overrides (it locks the wrong versions).",
+   "Deleting the failing H2 test instead of understanding the 401."
+  ],
+  "questions": [],
+  "tomorrow": "The build is green on Boot 3.5. Tomorrow: did the upgrade actually fix the findings? Re-scan and decide.",
+  "bridge": "our most recent framework-upgrade pull request. What did it fix by hand?"
+ },
+ {
+  "day": 12,
+  "tour": [
+   [
+    "Re-scan + Tomcat 10.1.61",
+    "Far fewer findings, but Boot 3.5's open-source support ended 2026-06-30, so some are back."
+   ],
+   [
+    "`FINDINGS.md`",
+    "The Day 9 decisions closed with evidence; the remaining findings each have a fix version or a reason they're blocked."
+   ],
+   [
+    "`build.gradle.kts`",
+    "One new override, Tomcat 10.1.61, with a reason comment and a removal condition."
+   ]
+  ],
+  "points": [
+   "Modernisation is a treadmill: the next hop is Boot 4 on Java 25, the Days 1–5 stack.",
+   "Re-scan after every upgrade: the baseline you compare against is part of the work."
+  ],
+  "mistakes": [
+   "Calling the migration done because the build is green."
+  ],
+  "questions": [
+   [
+    "Why did the scanner go *up* in CRITICALs after a successful upgrade?",
+    "3.5.16 is the last open-source 3.5 release; new advisories keep arriving."
+   ]
+  ],
+  "tomorrow": "A JDK-only upgrade, 17 → 21, done by inspecting first.",
+  "bridge": "how our team tracks end-of-support dates for each service."
+ },
+ {
+  "day": 13,
+  "tour": [
+   [
+    "Inspection output",
+    "`java -version` (shell), `./gradlew -version` (daemon JVM 17), the toolchain, `./gradlew javaToolchains`, `dependencyInsight` showing the requested JVM version, `jdeps --jdk-internals` (only `sun.misc.Unsafe` via `jdk.unsupported`)."
+   ],
+   [
+    "Evidence",
+    "Boot 3.5 system requirements: Java 17 up to 25. Gradle: Java 21 toolchains from 8.4. The daemon can stay on 17."
+   ],
+   [
+    "The change",
+    "`JavaLanguageVersion.of(21)`: one line. Log says `using Java 21`; lockfile unchanged."
+   ],
+   [
+    "The ticket",
+    "Docker base image, CI JDK, `release`, `-Xlint` deprecations, OpenRewrite `UpgradeToJava21`."
+   ]
+  ],
+  "points": [
+   "Inspect → check support from primary sources → change → prove. The same pattern for any upgrade.",
+   "The daemon JDK and the toolchain JDK are independent.",
+   "The JEP 451 dynamic-agent warning in test output is a real 21 effect (Mockito)."
+  ],
+  "mistakes": [
+   "Changing `JAVA_HOME` and assuming the build uses it.",
+   "Forgetting the runtime: the Docker image still on 17."
+  ],
+  "questions": [
+   [
+    "What would you check before 21 → 25?",
+    "Gradle's compatibility matrix (8.14 doesn't list 25), Boot support, and libraries using JDK internals."
+   ]
+  ],
+  "tomorrow": "We leave the legacy service here: it's on a supported Boot line, Java 21, patched and hardened. Tomorrow we go back to the **modern** Accounts API from Day 5 (Boot 4, Java 25), which has no security at all, and spend Days 14–19 on the OWASP Top 10 risks that matter most for a service that handles money. Ask the room to re-read Day 6's security-config table tonight: tomorrow they write one themselves.",
+  "bridge": "the Dockerfile base image and CI JDK for one of our services."
+ },
+ {
+  "day": 14,
+  "tour": [
+   [
+    "`build.gradle.kts`",
+    "`spring-boot-starter-security` (+ `-security-test`). Alone, it locks everything and prints a generated password."
+   ],
+   [
+    "`SecurityConfig`",
+    "`/hello` public; `GET /accounts/{id}` CUSTOMER or TELLER; `/accounts/**` TELLER; `anyRequest().authenticated()`. First match wins. `httpBasic`, `STATELESS`, CSRF off."
+   ],
+   [
+    "`InMemoryUserDetailsManager`",
+    "ada, grace, teller with `{noop}` passwords: Day 17 fixes them."
+   ],
+   [
+    "`AccountControllerTest`",
+    "`@Import(SecurityConfig.class)` (otherwise the slice uses Boot's defaults: POSTs get 403 from CSRF), `@WithMockUser(roles = \"TELLER\")`, `@WithAnonymousUser`."
+   ]
+  ],
+  "points": [
+   "401 = who are you? 403 = you can't do that.",
+   "Deny by default: anything not listed needs a login.",
+   "CSRF off is only safe because no browser holds a session for this API.",
+   "OWASP A01:2025 Broken Access Control is #1."
+  ],
+  "mistakes": [
+   "General rules before specific ones (first match wins).",
+   "Forgetting `@Import`: tests pass against the wrong rules."
+  ],
+  "questions": [
+   [
+    "Can a customer now read someone else's account?",
+    "Yes, by changing the id. Tomorrow."
+   ]
+  ],
+  "tomorrow": "Stop customers reading each other's accounts: an IDOR.",
+  "bridge": "one of our `SecurityFilterChain`s. Is it deny by default?"
+ },
+ {
+  "day": 15,
+  "tour": [
+   [
+    "`Account.username`",
+    "`@Column(nullable = false)`. Seeder and `CreateAccountRequest` carry it."
+   ],
+   [
+    "`AccountService.getVisibleTo`",
+    "Customer + not theirs → `AccountNotFoundException` (404, not 403)."
+   ],
+   [
+    "`AccountController.getById(..., Authentication caller)`",
+    "Spring passes the logged-in user; `isTeller` checks `ROLE_TELLER`."
+   ],
+   [
+    "Tests",
+    "Three Mockito tests; controller stubs use `@WithMockUser`'s default username `user`."
+   ]
+  ],
+  "points": [
+   "URL rules know *who* and *which URL*; only the data knows *whose*. Ownership belongs in the service.",
+   "404 doesn't confirm the record exists; 403 does.",
+   "Every endpoint that takes an id needs the same question."
+  ],
+  "mistakes": [
+   "Checking ownership in the controller (bypassed by the next caller of the service).",
+   "Trusting a `username` sent in the request instead of the authenticated one."
+  ],
+  "questions": [
+   [
+    "Which other endpoints need an ownership check?",
+    "Any non-teller endpoint taking an id. Day 19's transfers is one."
+   ]
+  ],
+  "tomorrow": "A colleague's search endpoint builds its query with `+`.",
+  "bridge": "an endpoint in our services that takes an id. Where is ownership checked?"
+ },
+ {
+  "day": 16,
+  "tour": [
+   [
+    "The vulnerable `findMine`",
+    "JPQL built with `+` from the `currency` parameter."
+   ],
+   [
+    "`AccountSearchTest`",
+    "`GBP' OR '1'='1` turns the `WHERE` into `... AND currency = 'GBP' OR '1'='1'`: every account, Grace's included. It bypasses Day 15."
+   ],
+   [
+    "The fix",
+    "`List<Account> findByUsernameAndCurrency(String username, String currency)`: bound parameters. `EntityManager` removed."
+   ]
+  ],
+  "points": [
+   "Injection = untrusted input reaching an interpreter. An ORM doesn't protect you if you build the string yourself (OWASP's own HQL example).",
+   "Fix with bound parameters (query methods, `:named`, `setParameter`), never escaping. Validation is supplementary.",
+   "Column names can't be bound: use an allow-list."
+  ],
+  "mistakes": [
+   "Validating `currency` with a regex and calling it fixed.",
+   "Escaping quotes by hand."
+  ],
+  "questions": [
+   [
+    "Where else does untrusted input reach an interpreter in a service?",
+    "Logs (tomorrow), shell commands, LDAP, templates, JSON paths."
+   ]
+  ],
+  "tomorrow": "Plain-text `{noop}` passwords are still in the code. Tomorrow: store them as salted, slow hashes.",
+  "bridge": "any `createQuery(`/`createNativeQuery(` near a `+` in our code."
+ },
+ {
+  "day": 17,
+  "tour": [
+   [
+    "`passwordEncoder()`",
+    "`new DelegatingPasswordEncoder(\"pbkdf2\", Map.of(\"pbkdf2\", Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8()))`. Stored as `{pbkdf2}…`."
+   ],
+   [
+    "`PasswordStorageTest`",
+    "No `{noop}`; prefix and no plaintext; salted (two hashes differ); `matches`."
+   ]
+  ],
+  "points": [
+   "Hash, don't encrypt, passwords: salted and slow (OWASP 2025 names Argon2, yescrypt, scrypt, PBKDF2; bcrypt for legacy).",
+   "The `{id}` prefix lets you migrate algorithms without a password reset."
+  ],
+  "mistakes": [],
+  "questions": [],
+  "tomorrow": "Attacks nobody sees: tomorrow every failed login and refused lookup leaves an audit line.",
+  "bridge": "where our services store or check passwords and API keys (or which identity provider does it)."
+ },
+ {
+  "day": 18,
+  "tour": [
+   [
+    "`SecurityAuditListener`",
+    "`@EventListener` on `AbstractAuthenticationFailureEvent` → `LOGIN_FAILED user=… reason=…` on logger `security.audit`."
+   ],
+   [
+    "`AuditLog.clean`",
+    "Replaces `\\r`/`\\n`: no forged log lines."
+   ],
+   [
+    "`ACCESS_DENIED` in `getVisibleTo`",
+    "OWASP A01: log access-control failures."
+   ],
+   [
+    "`SecurityAuditTest`",
+    "Real `httpBasic(\"ada\", \"wrong-pass\")` + `OutputCaptureExtension`."
+   ]
+  ],
+  "points": [
+   "Log who and why; never the attempted password (it's often a real one with a typo).",
+   "Log injection is Day 16 again: untrusted input reaching whoever reads the log."
+  ],
+  "mistakes": [
+   "Logging the whole `Authentication` object or request.",
+   "A test that only checks a line was logged, not that the password wasn't."
+  ],
+  "questions": [
+   [
+    "Would you log successful logins with HTTP Basic?",
+    "Every request is a login with Basic, so it's noise. With sessions or tokens, yes."
+   ]
+  ],
+  "tomorrow": "Transfers that can fail halfway.",
+  "bridge": "one of our services' logs: find a failed-login line, and anything in it that shouldn't be there."
+ },
+ {
+  "day": 19,
+  "tour": [
+   [
+    "The colleague's `transfer`",
+    "Withdraw, save, *then* load the destination. A missing destination → 404, but £40 has gone."
+   ],
+   [
+    "`TransferTest`",
+    "`@SpringBootTest` with an in-memory DB, **not** `@DataJpaTest`, whose per-test transaction would hide the bug."
+   ],
+   [
+    "The fix",
+    "`@Transactional` (rollback on `RuntimeException`) + load and check both accounts before changing either."
+   ]
+  ],
+  "points": [
+   "Failing closed: a failure must leave nothing half-done (OWASP A10:2025, scenario #3).",
+   "`@Transactional` is the safety net; check-then-change is the habit. Either alone isn't the whole story.",
+   "`@Transactional` only applies through the Spring proxy: calls from another bean, not from inside the same class."
+  ],
+  "mistakes": [
+   "Catching the exception and \"refunding\" by hand.",
+   "Testing with `@DataJpaTest` and seeing green."
+  ],
+  "questions": [
+   [
+    "Two transfers out of the same account at once both pass the balance check. What now?",
+    "Optimistic locking (`@Version`) or a database constraint."
+   ],
+   [
+    "Checked exceptions and rollback?",
+    "By default Spring rolls back on unchecked exceptions only; use `rollbackFor` otherwise."
+   ]
+  ],
+  "tomorrow": "Day 19's transaction protects one request. Tomorrow: two requests change the same account at the same moment, and one withdrawal vanishes.",
+  "bridge": "a method in our code that changes two things. Is it transactional?"
+ },
+ {
+  "day": 20,
+  "tour": [
+   [
+    "`model/Account.java`",
+    "`@Version private Long version;`. Show the SQL Hibernate now writes: `UPDATE … SET …, version = ? WHERE id = ? AND version = ?`."
+   ],
+   [
+    "`ConcurrentTransferTest`",
+    "Walk its five numbered steps: two `TransactionTemplate`s (the inner one `REQUIRES_NEW`) script the interleaving. No threads, no sleeps, so it's deterministic."
+   ],
+   [
+    "`exception/ApiExceptionHandler.java`",
+    "`@ExceptionHandler(OptimisticLockingFailureException.class)` → 409 `Concurrent update`. Spring has already translated Hibernate's `StaleObjectStateException`."
+   ],
+   [
+    "`AccountControllerTest.aConcurrentUpdateIs409`",
+    "The learners' test: the mock throws `ObjectOptimisticLockingFailureException`, and the answer is 409 + \"try again\"."
+   ]
+  ],
+  "points": [
+   "A lost update isn't a transaction bug: each transaction is fine on its own. It's two of them racing.",
+   "Optimistic locking assumes conflicts are rare: detect them at commit and let the client retry. Pessimistic locking (`@Lock`) blocks instead.",
+   "The failure happens at flush/commit, not at `save()`.",
+   "`synchronized` doesn't help: production runs several instances of the app."
+  ],
+  "mistakes": [
+   "Forgetting to delete `data/`: the new NOT NULL `version` column can't be added, and every transfer is a 500.",
+   "Catching Hibernate's own exception types: Spring has translated them.",
+   "Mapping the conflict to 500 or 400: 409 + \"try again\" tells the client what to do."
+  ],
+  "questions": [
+   [
+    "Should the server retry a 409 itself?",
+    "Sometimes, for safe operations. For payments, only if the retry can't pay twice, which is exactly tomorrow's problem."
+   ]
+  ],
+  "bridge": "an entity in our services with `@Version`, or a place where two requests could update the same row.",
+  "tomorrow": "The client sees a 409, or a timeout, and retries. Tomorrow: make sure a retried payment never pays twice."
+ },
+ {
+  "day": 21,
+  "tour": [
+   [
+    "`model/IdempotencyRecord.java`",
+    "Unique on (username, key). The column is `idempotency_key` because `key` is reserved in SQL. Stores the request fingerprint and the status answered."
+   ],
+   [
+    "`service/AccountService.transfer(…, idempotencyKey)`",
+    "Look up the record: different fingerprint → 422; same → replay the stored status; otherwise transfer and save the record, in **one** `@Transactional`."
+   ],
+   [
+    "The fingerprint",
+    "`from=1 to=3 amount=50` with `stripTrailingZeros()`, so `50` and `50.00` are the same request."
+   ],
+   [
+    "`controller/AccountController.transfer`",
+    "`@RequestHeader(required = false)` plus our own check, so the 400 carries our title; `ResponseEntity.status(...)` replays the stored answer."
+   ],
+   [
+    "Failed transfers",
+    "Not stored: the rollback takes the key with it, so the client can retry a 404 or insufficient funds."
+   ]
+  ],
+  "points": [
+   "Idempotency is a contract between client and server: the client owns the key, the server remembers the outcome.",
+   "Saving the key in the same transaction as the payment is the whole trick.",
+   "Keys are per user: two customers may pick the same key."
+  ],
+  "mistakes": [
+   "Saving the key in a separate transaction (key without payment, or payment without key).",
+   "Fingerprinting the raw body text.",
+   "Leaving `@RequestHeader` required: Spring's generic 400 has no title."
+  ],
+  "questions": [
+   [
+    "Two first requests with the same key arrive together. What happens?",
+    "Both pass the lookup; the unique constraint rejects the second with `DataIntegrityViolationException` (a 500 today). Map it to 409."
+   ]
+  ],
+  "bridge": "how our payment APIs (or a provider we call) handle retries. Is there an idempotency key?",
+  "tomorrow": "Ada can still send pounds into a dollar account. Tomorrow: money that knows its currency."
+ },
+ {
+  "day": 22,
+  "tour": [
+   [
+    "The starter run",
+    "Sending 10.005 left Ada at 1190.00: the database rounded 1189.995 up. Half a penny from nowhere."
+   ],
+   [
+    "`model/Money.java`",
+    "A record with a compact constructor: `setScale(2, RoundingMode.UNNECESSARY)` means \"never round; throw\". `add`/`subtract` refuse a different currency."
+   ],
+   [
+    "`model/Account.java`",
+    "`deposit(Money)` / `withdraw(Money)`: a balance can no longer meet a different currency."
+   ],
+   [
+    "`service/AccountService.transfer`",
+    "`new Money(amount, from.getCurrency())`; `to.deposit(money)` throws `CurrencyMismatchException`, and Day 19's `@Transactional` undoes the withdrawal."
+   ],
+   [
+    "`dto/TransferRequest.java`",
+    "`@Digits(integer = 17, fraction = 2)` matches the `precision 19, scale 2` column. The same rule went onto `openingBalance`, the other way money enters."
+   ]
+  ],
+  "points": [
+   "An amount without a currency is a bug waiting to happen.",
+   "Round only where a business rule says so (interest, FX, fees), and name the mode (`HALF_EVEN` is the banker's choice). Everywhere else, refuse.",
+   "Validate at the edge *and* in the type: the edge gives a good error, the type makes the mistake impossible."
+  ],
+  "mistakes": [
+   "`setScale(2)` with no mode: it means `UNNECESSARY` and throws at runtime.",
+   "`HALF_UP` in `Money`: it silently accepts 10.005.",
+   "`BigDecimal.equals`: 10.5 ≠ 10.50."
+  ],
+  "questions": [
+   [
+    "Why `HALF_EVEN` for a fee, not `HALF_UP`?",
+    "Over many transactions `HALF_UP` drifts upwards; `HALF_EVEN` rounds halves to the even digit, so the errors cancel out."
+   ]
+  ],
+  "bridge": "how amounts are represented in one of our services: `BigDecimal`, a money type, or minor units (pence as a `long`)?",
+  "tomorrow": "The colleague's next change shows full account numbers to everyone, and writes them to the logs. Tomorrow: mask what you show."
+ },
+ {
+  "day": 23,
+  "tour": [
+   [
+    "The colleague's change",
+    "`accountNumber` on `Account` (random 8 digits via `SecureRandom`, seeds 12345678 / 87654321), in full in `AccountResponse`, and in full in a new INFO log line."
+   ],
+   [
+    "`config/Mask.java`",
+    "One helper next to Day 18's `AuditLog`: null stays null, short values → `****`, otherwise `****` + the last 4."
+   ],
+   [
+    "`dto/AccountResponse.from`",
+    "The single exit point for every account JSON: get, list, `/mine` and create are all covered by one call."
+   ],
+   [
+    "`AccountService.transfer` log line",
+    "`TRANSFER from=****5678 to=****1513 amount=50.00 GBP`."
+   ],
+   [
+    "The tests",
+    "The log test also asserts the masked line *is* there, so deleting the log line doesn't pass."
+   ]
+  ],
+  "points": [
+   "Data leaves a service through responses, logs and errors. Mask all three.",
+   "Mask at the edge (display), never in storage: the stored number must stay intact.",
+   "One masking function, used everywhere, so the rules can't drift."
+  ],
+  "mistakes": [
+   "Masking in the entity getter (breaks storage and lookups).",
+   "`@JsonIgnore` (customers need the last 4).",
+   "Masking one endpoint and missing the list or create response.",
+   "`substring` on null or short values."
+  ],
+  "questions": [
+   [
+    "Who should ever see a full account number through this API?",
+    "Possibly the customer themselves, behind a deliberate, audited action. Never by default, and never in logs."
+   ]
+  ],
+  "bridge": "our logs for one service: anything that looks like a full account number, card number or email?",
+  "tomorrow": "Tomorrow: Day 5's API again, but built with Maven, as many of the team's services are. One dependency ticket to take through a build you haven't used yet."
+ },
+ {
+  "day": 24,
+  "tour": [
+   [
+    "`pom.xml` next to Day 5's `build.gradle.kts`",
+    "`<parent>` does the dependency-management plugin's job; `<java.version>` is the toolchain line, but with no download (`./mvnw -v` shows `JAVA_HOME`'s JDK); each `<dependency>` has a `<scope>` and no version."
+   ],
+   [
+    "`./mvnw test` on the starter",
+    "`Tests run: 16, Failures: 1`: \"jackson-databind on the classpath is 3.1.7; the ticket needs 3.1.8 or later\". Open `target/surefire-reports/` and compare it with `build/test-results/`."
+   ],
+   [
+    "`./mvnw dependency:tree -Dincludes=tools.jackson.core`",
+    "The chain `spring-boot-starter-webmvc` → `spring-boot-starter-jackson` → `spring-boot-jackson` → `jackson-databind:3.1.7` → `jackson-core:3.1.7`."
+   ],
+   [
+    "The one-line fix",
+    "`<jackson-bom.version>3.1.8</jackson-bom.version>` in `<properties>`. Re-run the tree: both modules are at 3.1.8."
+   ],
+   [
+    "`help:effective-pom`",
+    "Search for `jackson-databind`: `tools.jackson.core` at 3.1.8 (ours) and `com.fasterxml.jackson.core` at 2.21.7 (Jackson 2, from `jackson-2-bom.version`, untouched). `jackson-annotations` stays on 2.21 by design in Jackson 3."
+   ],
+   [
+    "`JacksonVersionTest`",
+    "It asks the jar for its version at run time, which is why a comment or a wrong property name can't turn it green. Then `./mvnw spring-boot:run`: the Day 5 Bruno collection still passes."
+   ]
+  ],
+  "points": [
+   "Maven and Gradle do the same jobs with different words: the translation table in the brief is the takeaway. Everything from Days 8–9 (trees, transitive dependencies, managed versions) carries over.",
+   "Override the **BOM property** Boot reads, not the single artifact: that keeps every module of the library on the same version (`jackson-core` moved too).",
+   "Property overrides work because of `spring-boot-starter-parent`. A service that imports `spring-boot-dependencies` as a BOM instead must import the library's BOM *before* Boot's.",
+   "Prove it from the resolved build (`dependency:tree`, `effective-pom`, a test), never from what the file says."
+  ],
+  "mistakes": [
+   "Adding `<version>3.1.8</version>` to a new `jackson-databind` dependency: the test goes green, but `jackson-core` stays at 3.1.7 (mixed module versions), and the next Boot upgrade keeps the old pin.",
+   "Guessing the property name (`<jackson.version>`, `<jackson-databind.version>`): Maven silently ignores a property nothing reads. No error, no change.",
+   "Searching the tree for `com.fasterxml.jackson.core`: that's Jackson 2's group id. Boot 4 uses Jackson 3 (`tools.jackson.core`).",
+   "Running Maven on the wrong JDK: on Java 21, `./mvnw compile` fails with \"release version 25 not supported\". Maven doesn't download JDKs; check `./mvnw -v`."
+  ],
+  "questions": [
+   [
+    "Why did changing one property move two jars?",
+    "`jackson-databind` and `jackson-core` both get their version from Jackson's BOM, which Boot imports at `${jackson-bom.version}`. One property, every module."
+   ],
+   [
+    "A service has no `<parent>` and imports `spring-boot-dependencies` in `<dependencyManagement>`. Your property override does nothing. Why, and what do you do?",
+    "An imported BOM's properties can't be overridden from the importing POM. Import `tools.jackson:jackson-bom:3.1.8` in `<dependencyManagement>` *before* `spring-boot-dependencies` (the first declaration wins), as Boot's \"Using Spring Boot without the Parent POM\" shows."
+   ]
+  ],
+  "bridge": "a service of ours built with Maven: does it use `spring-boot-starter-parent` or import the BOM? List every `<…version>` property in its `<properties>` and, for each, say whether Boot actually reads it.",
+  "tomorrow": "Tomorrow: a service that never left Java 8. Moving it to Java 11 breaks the build, because part of the JDK it relied on was removed, and you'll put it back as an ordinary dependency."
+ },
+ {
+  "day": 25,
+  "tour": [
+   [
+    "The starter on Java 8",
+    "`./gradlew -q javaToolchains` (on an Apple Silicon Mac, an x64 Temurin 8 \"Auto-provisioned by Gradle\"), `./gradlew test` ({{starter.failing}} red: \"the tests run on Java 1.8\"), and `/actuator/info` showing `1.8.0_504`."
+   ],
+   [
+    "`grep -r javax.xml.bind src`",
+    "`Account`, `AccountsXml`, `XmlExporter`, `AccountController`. On Java 8 these classes come from the JDK itself: nothing in `build.gradle.kts` provides them."
+   ],
+   [
+    "Flip the toolchain to 11",
+    "`./gradlew compileJava` → `error: package javax.xml.bind does not exist`. Open JEP 320's list of removed modules."
+   ],
+   [
+    "Half a fix: only `jakarta.xml.bind-api`",
+    "It compiles, then 5 of {{starter.tests}} tests fail with `JAXBException: Implementation of JAXB-API has not been found on module path or classpath`. The context test fails too, because `XmlExporter` builds its `JAXBContext` in its constructor."
+   ],
+   [
+    "The whole fix",
+    "Add `runtimeOnly(\"org.glassfish.jaxb:jaxb-runtime\")`. `dependencyInsight` shows 2.3.3 and 2.3.9, both \"selected by rule\" (Boot's managed versions). 6/6 green, the log says `using Java 11.0.33`, Bruno 3/3."
+   ],
+   [
+    "Why there's no JPA here",
+    "In a Boot 2.7 app with `spring-boot-starter-data-jpa`, Hibernate 5.6 already brings `jaxb-api` and `jaxb-runtime` transitively, so the same upgrade would *not* break. Worth knowing which of our services rely on that by accident."
+   ]
+  ],
+  "points": [
+   "JDK upgrades can remove things: Java 11 removed JAXB, JAX-WS, JAF, Common Annotations (`javax.annotation`) and CORBA (JEP 320). The fix is ordinary dependencies, at the framework's managed versions.",
+   "An API to compile against, an implementation to run: two dependencies in two different configurations.",
+   "`jakarta.xml.bind-api` **2.3.x** keeps the `javax.xml.bind` package; **3.x and later** rename it to `jakarta.xml.bind`, which belongs with Boot 3 (Day 11), not with this upgrade.",
+   "Same pattern as Day 13: inspect, check support from primary sources, change one thing, prove it."
+  ],
+  "mistakes": [
+   "Adding only the API: it compiles, then fails at run time with `Implementation of JAXB-API has not been found`.",
+   "Picking the newest JAXB from Maven Central (`jakarta.xml.bind-api` 4.x): every `javax.xml.bind` import breaks, because the package was renamed.",
+   "Writing versions (`:2.3.3`) into `build.gradle.kts`: works today, but fights Boot's dependency management on the next upgrade.",
+   "Changing `JAVA_HOME` instead of the toolchain: the build still compiles and tests on Java 8 (Day 13)."
+  ],
+  "questions": [
+   [
+    "Why does the red test use `System.getProperty(\"java.specification.version\")` and not `Runtime.version().feature()`?",
+    "The starter compiles on Java 8, where `Runtime.version()` doesn't exist (it arrived in Java 9). The property exists on every version: `1.8` before, `11` after (JEP 223)."
+   ],
+   [
+    "A teammate says \"we've moved loads of Boot 2.7 services to Java 11 and JAXB never came up\". How can that be?",
+    "Something else already brought JAXB in transitively, most often Hibernate 5.x via `spring-boot-starter-data-jpa`. Check with `dependencyInsight --dependency jaxb-runtime` before relying on it."
+   ]
+  ],
+  "bridge": "a Java 8 or 11 service of ours, and search it for `javax.xml.bind`, `javax.xml.ws`, `javax.activation` and `javax.annotation`. For each hit, which dependency supplies that package today, or does only the JDK?",
+  "tomorrow": "Tomorrow: the organisation's security scanner has sent a report on the Accounts API. Triage it finding by finding: fix it, prove it's a false positive, accept the risk, or mark it a duplicate."
+ },
+ {
+  "day": 26,
+  "tour": [
+   [
+    "`reports/sast-report.sarif`",
+    "`runs[0].tool.driver.rules` (id, CWE, help link, default level) vs `runs[0].results` (ruleId, message, `locations[].physicalLocation`, `properties.findingId`). Real tools track a finding across scans with `guid` / `partialFingerprints`; our short ids live in a property bag, which SARIF allows."
+   ],
+   [
+    "`NotificationsClient`, before and after",
+    "`static final String API_KEY = \"ntf_live_…\"` → a constructor `@Value(\"${notifications.api-key}\")`, and `notifications.api-key=${NOTIFICATIONS_API_KEY:}` in `application.properties`. `NoHardcodedSecretsTest`: one test scans `src/main` like a secrets scanner, the other proves the value comes from configuration."
+   ],
+   [
+    "`TokenHasher`",
+    "`\"MD5\"` → `\"SHA-256\"`, and `TokenHashingTest`'s FIPS 180-2 test vector for `\"abc\"`."
+   ],
+   [
+    "`TRIAGE.md`",
+    "The six rows: SAST-101 and 102 Fix (101's justification says the key was rotated), 103 and 104 False positive, 105 Accept risk, 106 Duplicate of 101."
+   ],
+   [
+    "`reports/decisions/SAST-103.md` and `SAST-105.md`",
+    "A false positive with test evidence (Day 16's `AccountSearchTest`), and an accepted risk: what could go wrong, why it's low today, the plan, the owner, the review date (2027-02-10), and what ends the acceptance."
+   ],
+   [
+    "`TriageTest`",
+    "The paperwork checked against the code, so a release can't go out with an undecided finding. A Fix must really remove the flagged code (the SARIF `snippet`, whitespace ignored), and a Duplicate must name another finding on the same line: so calling the Spring Data query or the test password \"Fix\" can't dodge the decision record."
+   ]
+  ],
+  "points": [
+   "A scanner report is input, not a verdict. Every finding needs a decision **and evidence**: code, a test, or a link.",
+   "\"Accept risk\" is a decision someone owns, with an expiry date, not \"ignore\". Engineers recommend; a risk owner accepts.",
+   "Fixing a leaked secret in code is half the job: rotate it, because it lives on in Git history and in every clone.",
+   "Fast hashes (SHA-256) are right for long random tokens; slow salted ones (Day 17) for passwords. MD5 and SHA-1 are wrong for both."
+  ],
+  "mistakes": [
+   "Marking SAST-103 a false positive \"because we use JPA\", without evidence. Point to the Day 16 test.",
+   "Moving the key into `application.properties` as a literal: still a secret in the repository, and `noSecretLiteralsInMainCode` stays red.",
+   "Treating the duplicate as a second piece of work, or closing SAST-101 as a duplicate of SAST-106 without fixing anything.",
+   "An accepted risk with no owner or review date.",
+   "Marking a false positive or the accepted risk \"Fix\" to skip the record: `everyFixRemovedTheFlaggedCode` fails, because the flagged code is still there."
+  ],
+  "questions": [
+   [
+    "The scanner flags the same false positive every week. What do you do?",
+    "Suppress it in the tool with a link to the decision record (most tools have a \"false positive\" status or a suppression comment), so the decision travels with the code. Don't just ignore the report."
+   ],
+   [
+    "Who can accept a risk?",
+    "Not the developer alone: the service's risk owner (often a product or engineering lead), under the organisation's risk process. The developer writes the analysis."
+   ]
+  ],
+  "bridge": "the latest SAST report for one of our services (in the scanner's dashboard or the pipeline's artifacts). Pick three findings: what did the team decide, who decided, and when is each due for review?",
+  "tomorrow": "Tomorrow: a critical CVE is announced in a library half the world uses. You have hours, not weeks: which of our services ship it? A zero-day drill."
+ },
+ {
+  "day": 27,
+  "tour": [
+   [
+    "`settings.gradle.kts` and `./gradlew projects`",
+    "One build, five projects; task paths like `:services:payments:test`."
+   ],
+   [
+    "The find",
+    "The `dependencyInsight` loop over the three services. Statements' path is two hops (`statements → reporting → audit → log4j-core`): nobody on that team ever typed \"log4j\". Notifications ships `log4j-api` + `log4j-to-slf4j` and no `log4j-core`, and Apache says only `log4j-core` is affected. (Spring Boot's default set-up looks exactly like this.)"
+   ],
+   [
+    "`gradle/libs.versions.toml` and `libs/audit/build.gradle.kts`",
+    "The catalog said 2.14.1, but `audit` hard-coded its own copy. Bump only the catalog: the services still ship 2.14.1. Bump only `audit`'s line: the services are patched, but the catalog still says 2.14.1, and `log4jCoreIsTheVersionInTheCatalog` fails. The fix: `audit` uses `libs.log4j.core`, and the catalog says `2.26.1`."
+   ],
+   [
+    "`PaymentsLog4jVersionTest`",
+    "`Class.forName` (the library is runtime-only), then `getPackage().getImplementationVersion()` from the jar's manifest. `log4jCoreIsPatched` compares it with a floor of 2.17.1; `log4jCoreIsTheVersionInTheCatalog` compares it with the catalog's `log4j` entry. It checks what's loaded, not what a file says."
+   ],
+   [
+    "`./gradlew test` at the top",
+    "One command runs every project's tests; `--continue` shows every red service, not only the first."
+   ],
+   [
+    "`INCIDENT.md` (solution)",
+    "The table, the commands, the fix, the evidence, and \"not affected, and here's why\" for notifications."
+   ]
+  ],
+  "points": [
+   "In an incident the first question is **\"where is it?\"**, and the answer is almost always transitive. Look at what ships (`runtimeClasspath`), per service.",
+   "Pick the version from primary sources, and take the fix for the whole family of CVEs (2.17.1 or later), not the first patch (2.15.0). Apache's page and NVD disagree slightly on CVE-2021-44832: take the stricter answer. Then use a current release.",
+   "One version, one place: a catalog or a BOM makes the next emergency a one-line change. Hard-coded versions in shared libraries are where fixes go missing.",
+   "\"Not affected\" is a finding too, and needs evidence as much as \"fixed\" does."
+  ],
+  "mistakes": [
+   "Running `dependencyInsight` on `compileClasspath`, or on the root project, and concluding \"not there\".",
+   "Choosing 2.15.0 or 2.16.0 because it fixes \"the\" CVE.",
+   "Bumping only `libs/audit`'s hard-coded line: the services are patched, but the estate now has two Log4j versions and the catalog still says 2.14.1.",
+   "Bumping only the catalog and declaring victory without running the tests.",
+   "Calling notifications affected because it has \"log4j\" in its dependencies."
+  ],
+  "questions": [
+   [
+    "The fix is merged. Is the incident closed?",
+    "No: not until the rebuilt services are deployed everywhere they run, and the other teams using `libs/audit` have taken the new version."
+   ],
+   [
+    "What would have made this faster?",
+    "A lockfile or SBOM per service somewhere searchable (then it's a query, not a build), one version source per library, and an SCA scanner that alerts on new advisories."
+   ]
+  ],
+  "bridge": "one of our services, and answer \"do we ship log4j-core, and which version?\" in under five minutes. Where are its lockfile, SBOM or SCA results? Which shared libraries do several of our services use, and where are their versions set?",
+  "tomorrow": "Tomorrow: the libraries are patched, but the service ships inside a container image with its own Java runtime and operating system. Is the base image patched too?"
+ },
+ {
+  "day": 28,
+  "tour": [
+   [
+    "`starter/Dockerfile`",
+    "Three problems: a deprecated image, Java 11 against a Java 21 toolchain, and no `USER`. Show the `openjdk` page's deprecation notice on Docker Hub, and that the tag no longer exists."
+   ],
+   [
+    "`DockerfileTest`",
+    "It runs without Docker: it reads two text files (joins `\\` lines, last `FROM` = final stage, which must be `eclipse-temurin` at the toolchain's Java version, so `ubuntu:21.04` doesn't pass; the stage's last `USER` is the one Docker uses, even after `ENTRYPOINT`). A cheap guard that would have caught Days 11 and 13 forgetting the image."
+   ],
+   [
+    "`solution/Dockerfile`",
+    "`eclipse-temurin:21-jre-resolute` (a JRE, so less to patch; a named OS release, so moving to the next one is a decision), the `groupadd`/`useradd` line, `/app/data` owned by the app user, numeric `USER 10001:10001`, and the comment on how patches arrive (`docker build --pull`)."
+   ],
+   [
+    "`solution/.dockerignore`",
+    "Keeps `data/`, `.gradle/` and `src/` out of the build context: no local H2 data in the image."
+   ],
+   [
+    "With Docker, if the presenter has it",
+    "`docker run --entrypoint id`, then `trivy image` and compare the OS findings. (These steps weren't run when the day was built: check them beforehand.)"
+   ]
+  ],
+  "points": [
+   "The image is part of what we ship. A clean lockfile scan says nothing about the Java runtime or OS in the image.",
+   "Images don't patch themselves: a floating tag only helps if you rebuild and redeploy. Pinning by digest trades automatic fixes for repeatability, so it needs a bot (Renovate, Dependabot) or a routine.",
+   "The runtime Java must equal or exceed the compile target. A JDK upgrade ticket (Day 13) must include the image.",
+   "Non-root is a cheap layer of defence in depth; many platforms (Kubernetes `runAsNonRoot`, OpenShift) refuse or randomise root anyway."
+  ],
+  "mistakes": [
+   "Swapping `openjdk:11-jre-slim` for `eclipse-temurin:11-jre`: supported, but the app is Java 21 (the first test catches it).",
+   "`USER app` without creating the user: `docker run` fails with \"unable to find user app\".",
+   "A non-root user with the default working directory `/`: the app starts, then H2 can't create `./data`.",
+   "Overriding `ENTRYPOINT` and losing the image's `/__cacert_entrypoint.sh`. It only matters with `USE_SYSTEM_CA_CERTS`; worth knowing, not a bug here."
+  ],
+  "questions": [
+   [
+    "Why `21-jre-resolute` and not `latest` or `21`?",
+    "`latest` can jump Java versions under you; `21` is a JDK (bigger, more to patch); naming the OS release makes an Ubuntu upgrade a decision, not a surprise."
+   ],
+   [
+    "The scan shows a HIGH finding in an OS package with no fix available. What now?",
+    "As on Day 9: record a decision (not reachable, or accepted until a fix ships), and rebuild when the base image publishes the fix. A smaller base (`-alpine`, `ubi-minimal`, `jlink`) leaves less to find."
+   ]
+  ],
+  "bridge": "the `Dockerfile` (or Jib or buildpacks configuration) of one of our services. Which base image and tag does it use? Does its Java version match the build's? Does it set `USER`? When was the image last rebuilt?",
+  "tomorrow": "Tomorrow: the same service moves to Spring Boot 4 on Java 25, the team's modern platform, and the Java version in the image has to move with it."
+ },
+ {
+  "day": 29,
+  "tour": [
+   [
+    "`starter/…/PlatformVersionTest.java`",
+    "The goal state as a test. Plain JUnit, no Spring context, so it compiles and runs on both platforms: `Runtime.version().feature()` and `SpringBootVersion.getVersion()` (which exists in both 3.5 and 4)."
+   ],
+   [
+    "`solution/BOOT4-UPGRADE.md`",
+    "Walk the log row by row. The order: wrapper first (the smallest step), then Boot and Java together, then fix what the build reports first."
+   ],
+   [
+    "`build.gradle.kts`, starter vs solution",
+    "Plugin and toolchain lines, `-web` → `-webmvc`, the split test starters, `spring-boot-h2console`, and Day 12's Tomcat override gone."
+   ],
+   [
+    "The three test files",
+    "Only imports changed, plus `@AutoConfigureTestRestTemplate` on `H2ConsoleTest`."
+   ],
+   [
+    "`gradle/`",
+    "The wrapper properties say 9.8.2 and `gradle-daemon-jvm.properties` is gone. Run `./gradlew -version` in both projects."
+   ],
+   [
+    "The `gradle.lockfile` diff",
+    "`com.fasterxml.jackson` → `tools.jackson`, Tomcat 11, Spring Framework 7, Hibernate 7, JUnit 6."
+   ]
+  ],
+  "points": [
+   "A major upgrade is a loop: one change, build, read the first error, fix, log. The log is the reusable asset for the next service.",
+   "Most Boot 4 breakage in a small app is *build* breakage (modules, starters, packages). The code under `src/main` didn't change at all.",
+   "Green is not done: two real problems (Tomcat pinned back to 10.1, the dev H2 console gone) produced no failing test. Check what you resolved, and what you used to have.",
+   "Read the vendor's guide, not just a tool's patch: OpenRewrite's 4.0 recipe would have stopped at 4.0.x, whose open-source support ends on 2026-12-31."
+  ],
+  "mistakes": [
+   "Running `./gradlew` from the day folder instead of `starter/`, or editing `PlatformVersionTest` to make it pass.",
+   "Forgetting `--write-locks` after a dependency change, then \"fixing\" the lock error by deleting `dependencyLocking { }`.",
+   "Switching to `spring-boot-starter-classic` to get green and stopping there; the guide calls it an intermediate step.",
+   "Leaving `extra[\"tomcat.version\"]` in because the build is green."
+  ],
+  "questions": [
+   [
+    "Why did `H2ConsoleTest` keep passing after the H2 console disappeared?",
+    "It checks that the console is **off** (404) outside `dev`. Without the module the console is off everywhere, so the test can't tell. A test that it's **on** in `dev` would have caught it."
+   ],
+   [
+    "Could we have skipped Gradle 9?",
+    "For Boot 4.1.2, yes (it supports Gradle 8.14 and later), but not for running Gradle itself on Java 25, which needs Gradle 9.1 or later. Staying on 8.14 means keeping the JDK 17 daemon pin."
+   ]
+  ],
+  "bridge": "a service of ours still on Boot 3.x: which `spring-boot-starter-*` dependencies does it declare, which `org.springframework.boot.test.autoconfigure…` imports do its tests use, and does its build file carry `extra[\"…version\"]` overrides that Boot 4 would make stale?",
+  "tomorrow": "Tomorrow: today's service was already on Spring Boot; tomorrow's isn't. An older Spring MVC app packaged as a WAR, with XML configuration, moves onto Spring Boot for the first time."
+ },
+ {
+  "day": 30,
+  "tour": [
+   [
+    "`starter/src/main/webapp/WEB-INF/`",
+    "`web.xml` starts two contexts (root and dispatcher); `applicationContext.xml`, `dispatcher-servlet.xml`, `weblogic.xml`. For each element, ask what Boot replaces it with: `@SpringBootApplication` + `main` for `web.xml`, component scan for `<context:component-scan>`, auto-configuration for `<mvc:annotation-driven/>`, `application.properties` for the placeholder configurer, `server.servlet.context-path` for `weblogic.xml`'s context root."
+   ],
+   [
+    "`starter/…/BootApplicationTest`",
+    "Why it looks classes up by name (a red test must still compile before Boot is on the classpath), and how it turned green."
+   ],
+   [
+    "`solution/build.gradle.kts`",
+    "The Boot plugin, one starter, and `extra[\"spring-framework.version\"] = \"5.3.39\"` with its comment. Show `dependencyInsight` without the override: 5.3.31, and `SpringVersionTest` goes red. Moving to Boot must not downgrade Spring."
+   ],
+   [
+    "`solution` `AccountsApplication` and `config/AccountsConfig`",
+    "Each line says which XML it replaced. `AccountService` and `AccountController` didn't change at all."
+   ],
+   [
+    "The `solution` tests",
+    "`AccountControllerTest` is now a `@WebMvcTest`; `BootApplicationTest` is a real `@SpringBootTest(webEnvironment = RANDOM_PORT)`."
+   ],
+   [
+    "`./gradlew bootRun` and the Bruno collection",
+    "The same contract, now on an embedded Tomcat."
+   ]
+  ],
+  "points": [
+   "Change the wiring, not the behaviour: the same Framework line (5.3), the same contract, the same test assertions. That's why Boot 2.7 comes first, even though it's out of open-source support.",
+   "`@ImportResource` is a legitimate first step on a big app (move the XML out of `WEB-INF`, which isn't on Boot's classpath); convert XML in small, tested steps afterwards. Leave `<mvc:annotation-driven/>` out of the import.",
+   "Dependency management can move versions both ways: check what you actually resolve after a migration.",
+   "Anything server-specific (`weblogic.xml`, JNDI, context root, shared libraries) is a conversation with the platform team, not just a delete.",
+   "Boot 2.7 itself no longer gets free security fixes, so today is a first hop, not the end. This app's next hops are the ones the legacy service took: Day 11 (Boot 3), Day 13 (Java 21), Day 29 (Boot 4 on Java 25)."
+  ],
+  "mistakes": [
+   "Putting `@SpringBootApplication` in a sub-package (e.g. `config`): the scan misses `controller`, and `/accounts` is 404.",
+   "Keeping `<mvc:annotation-driven/>` via `@ImportResource` (a second, differently configured MVC set-up), or adding `@EnableWebMvc` (Boot's MVC auto-configuration backs off, so Jackson settings and error handling change).",
+   "Deleting `web.xml` but leaving `src/main/webapp` with the other XML files, or keeping the `war` plugin with no `SpringBootServletInitializer`: it builds, but the WAR won't start on a server.",
+   "Letting Boot 2.7.18 quietly downgrade Spring Framework to 5.3.31."
+  ],
+  "questions": [
+   [
+    "Why not jump straight to Boot 3?",
+    "That's three changes at once (wiring, `javax` → `jakarta`, Framework 5 → 6). One at a time keeps every step testable, and Day 11's OpenRewrite recipes expect a Boot app as input."
+   ],
+   [
+    "The app gets its DataSource from WebLogic through JNDI. What do you do?",
+    "Find out who owns the credentials and connection settings. In Boot it becomes `spring.datasource.*` (from environment variables or a secret store, Day 10), or keep `spring.datasource.jndi-name` while it's still deployed as a WAR."
+   ]
+  ],
+  "bridge": "any `web.xml`, `*-servlet.xml` or `weblogic.xml` (or WebSphere's `ibm-web-*.xml`) in our repositories. For one hit: which Spring version does it use, how is it deployed, and which of today's steps would it need?",
+  "tomorrow": "That's the course. This week, pick a real ticket from the team's backlog that looks like one of these days (a scanner finding, a dependency or JDK upgrade, an old app's build) and work it the same way: inspect, check primary sources, change one thing, prove it, and write down what you found."
+ }
+]
